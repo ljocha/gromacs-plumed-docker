@@ -5,6 +5,7 @@ services:
 
 before_script:
 - ip a s
+- apk install --update bash
 - docker version
 - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
 
