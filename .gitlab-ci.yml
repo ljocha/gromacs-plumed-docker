@@ -13,10 +13,6 @@ before_script:
 build-all:
   stage: build
   script:
-    - cd plumed
-    - docker build --pull -t "$CI_REGISTRY_IMAGE/plumed" .
-    - docker push "$CI_REGISTRY_IMAGE/plumed"
-    - cd ../gromacs
-    - docker build --pull -t "$CI_REGISTRY_IMAGE/gromacs" --build-arg PLUMED_IMAGE="$CI_REGISTRY_IMAGE/plumed" .
+    - ./build-all.sh
   only:
     - master
