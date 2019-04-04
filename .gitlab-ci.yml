@@ -13,6 +13,7 @@ before_script:
 build-all:
   stage: build
   script:
+    - ls -l
     - ./build-all.sh
   only:
     - master
