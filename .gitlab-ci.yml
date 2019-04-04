@@ -14,6 +14,6 @@ build-all:
   stage: build
   script:
     - ls -l
-    - ./build-all.sh
+    - bash ./build-all.sh
   only:
     - master
