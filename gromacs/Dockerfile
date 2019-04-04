@@ -24,10 +24,11 @@
 # Build stage
 ###############################################################################
 
-MAINTAINER Ales Krenek <ljocha@ics.muni.cz>
 
 ARG PLUMED_IMAGE=ljocha/plumed
 FROM $PLUMED_IMAGE as builder
+
+MAINTAINER Ales Krenek <ljocha@ics.muni.cz>
 
 # Update according to http://manual.gromacs.org/documentation/
 ARG GROMACS_VERSION=2018.6
