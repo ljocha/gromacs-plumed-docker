@@ -1,0 +1,21 @@
+image: docker:latest
+
+services:
+- docker:dind
+
+before_script:
+- docker version
+- docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" REGISTRY="$CI_REGISTRY"
+
+
+
+build-plumed:
+  stage: build
+  script:
+    - cd plumed
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/plumed" .
+    - docker push "$CI_REGISTRY_IMAGE/plumed"
+    - cd ../gromacs
+    - docker build --pull -t "$CI_REGISTRY_IMAGE/gromacs" --build-arg PLUMED_IMAGE="$CI_REGISTRY_IMAGE/plumed" .
+  only:
+    - master
