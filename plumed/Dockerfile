@@ -5,7 +5,7 @@
 # ------------------------------------------------
 # Dockerfile to run gromacs on an ubuntu base install with plumed
 
-FROM nvidia/cuda:9.2-devel-ubuntu18.04 
+FROM nvidia/cuda:10.1-devel-ubuntu18.04 
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 
 #enable contributed packages
