@@ -157,15 +157,14 @@ ENV PATH=$PATH:/gromacs/bin
 # setup labels
 # LABEL com.nvidia.gromacs.version="${GROMACS_VERSION}"
 
-ENV USER ljocha
-ENV UID 1000
+ENV USER gromacs
+ENV UID 2000
 ENV HOME /home/$USER
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
 
 RUN useradd -m -s /bin/bash -N -u $UID $USER
 RUN ldconfig
-
 
 USER $USER
 WORKDIR $HOME

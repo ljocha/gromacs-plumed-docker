@@ -23,8 +23,8 @@ RUN ./configure --enable-modules=all && make -j4 && make install && make clean
 
 
 ENV SHELL /bin/bash
-ENV USER ljocha
-ENV UID 1000
+ENV USER gromacs
+ENV UID 2000
 ENV HOME /home/$USER
 ENV LANG en_US.UTF-8
 ENV LANGUAGE en_US.UTF-8
