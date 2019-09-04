@@ -88,7 +88,8 @@ RUN for ARCH in SSE2 AVX_256 AVX2_256 AVX_512; do \
   && CC=gcc CXX=g++ cmake /gromacs-src \
     -DGMX_OPENMP=ON \
     -DGMX_GPU=ON \
-    -DGMX_MPI=OFF \
+    -DGMX_MPI=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
     -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
     -DCMAKE_INSTALL_PREFIX=/gromacs \
     -DREGRESSIONTEST_DOWNLOAD=ON \
