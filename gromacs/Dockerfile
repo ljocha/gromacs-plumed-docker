@@ -47,12 +47,10 @@ RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     cmake \
     curl \
-    libopenmpi-dev \
-    openmpi-bin \
-    openmpi-common \
     python \
   && rm -rf /var/lib/apt/lists/*
-ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/openmpi/lib
+
+# ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib/openmpi/lib
 
 # Download sources
 RUN mkdir -p /gromacs /gromacs-src
@@ -138,9 +136,7 @@ FROM nvidia/cuda:10.1-runtime-ubuntu18.04
 RUN apt-get update \
   && apt-get install -y --no-install-recommends \
     libgomp1 \
-    libopenmpi-dev \
-    openmpi-bin \
-    openmpi-common \
+    mpich \
     python 
 #   && rm -rf /var/lib/apt/lists/*
 

@@ -13,7 +13,8 @@ MAINTAINER Ales Krenek <ljocha@ics.muni.cz>
 
 RUN cat /etc/apt/sources.list
 #install dependencies
-RUN apt-get update && apt-get install -y libfftw3-dev git cmake g++ gcc libblas-dev xxd openmpi-bin libopenmpi-dev && apt-get clean
+#RUN apt-get update && apt-get install -y libfftw3-dev git cmake g++ gcc libblas-dev xxd openmpi-bin libopenmpi-dev && apt-get clean
+RUN apt-get update && apt-get install -y libfftw3-dev git cmake g++ gcc libblas-dev xxd mpich libmpich-dev && apt-get clean
 
 #get plumed
 ENV PLUMED_VERSION=v2.5.1
