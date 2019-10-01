@@ -88,7 +88,6 @@ RUN for ARCH in SSE2 AVX_256 AVX2_256 AVX_512; do \
     -DGMX_GPU=ON \
     -DGMX_MPI=ON \
     -DGMX_DEFAULT_SUFFIX=OFF \
-    -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
     -DCMAKE_INSTALL_PREFIX=/gromacs \
     -DREGRESSIONTEST_DOWNLOAD=ON \
     -DGMX_USE_NVML=OFF \
@@ -99,6 +98,29 @@ RUN for ARCH in SSE2 AVX_256 AVX2_256 AVX_512; do \
     -DCMAKE_INSTALL_LIBDIR=lib.${ARCH} \
   && make -j ${JOBS} \
   && make install; done
+
+
+RUN for ARCH in SSE2 AVX_256 AVX2_256 AVX_512; do \
+     mkdir -p /gromacs-build.${ARCH}_d && cd /gromacs-build.${ARCH}_d \
+  && CC=gcc CXX=g++ cmake /gromacs-src \
+    -DGMX_OPENMP=ON \
+    -DGMX_MPI=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCUDA_TOOLKIT_ROOT_DIR=/usr/local/cuda \
+    -DCMAKE_INSTALL_PREFIX=/gromacs \
+    -DREGRESSIONTEST_DOWNLOAD=ON \
+    -DGMX_USE_NVML=OFF \
+    -DGMX_USE_RDTSCP=OFF \
+#    -DMPIEXEC_PREFLAGS=--allow-run-as-root \
+    -DGMX_SIMD=${ARCH} \
+    -DGMX_BUILD_MDRUN_ONLY=on \
+    -DGMX_DOUBLE=on \
+    -DGMX_BINARY_SUFFIX=_d -DGMX_LIBS_SUFFIX=_d \
+    -DCMAKE_INSTALL_BINDIR=bin.${ARCH} \
+    -DCMAKE_INSTALL_LIBDIR=lib.${ARCH} \
+  && make -j ${JOBS} \
+  && make install; done
+
 
 # Run tests (optional)
 # We avoid running tests for AVX_512, since that hardware might not be available
@@ -122,7 +144,8 @@ RUN cd /gromacs-build.AVX_512 \
 # 
 # Add architecture-detection script
 COPY gmx-chooser /gromacs/bin/gmx
-RUN chmod +x /gromacs/bin/gmx
+COPY gmx-chooser /gromacs/bin/gmx_d
+RUN chmod +x /gromacs/bin/gmx /gromacs/bin/gmx_d
 
 ###############################################################################
 # Final stage
