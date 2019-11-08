@@ -16,11 +16,17 @@ RUN cat /etc/apt/sources.list
 #RUN apt-get update && apt-get install -y libfftw3-dev git cmake g++ gcc libblas-dev xxd openmpi-bin libopenmpi-dev && apt-get clean
 RUN apt-get update && apt-get install -y libfftw3-dev git cmake g++ gcc libblas-dev xxd mpich libmpich-dev && apt-get clean
 
+WORKDIR /srv
+RUN git clone https://github.com/asmjit/asmjit.git && cd asmjit && git checkout 673dcefa && mkdir build
+WORKDIR /srv/asmjit/build
+RUN cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j 4 && make install
+
+
 #get plumed
-ENV PLUMED_VERSION=v2.5.1
+ENV PLUMED_VERSION=v2.5.3
 RUN git clone https://github.com/plumed/plumed2 --branch $PLUMED_VERSION --single-branch /srv/plumed
 WORKDIR /srv/plumed
-RUN ./configure --enable-modules=all && make -j4 && make install && make clean
+RUN ./configure --enable-asmjit --enable-modules=all && make -j4 && make install && make clean
 
 
 ENV SHELL /bin/bash

@@ -144,8 +144,8 @@ RUN cd /gromacs-build.AVX_512 \
 # 
 # Add architecture-detection script
 COPY gmx-chooser /gromacs/bin/gmx
-COPY gmx-chooser /gromacs/bin/gmx_d
-RUN chmod +x /gromacs/bin/gmx /gromacs/bin/gmx_d
+COPY gmx-chooser /gromacs/bin/mdrun_d
+RUN chmod +x /gromacs/bin/gmx /gromacs/bin/mdrun_d
 
 ###############################################################################
 # Final stage
