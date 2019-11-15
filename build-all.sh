@@ -1,7 +1,7 @@
 #!/bin/bash
 
 IMAGE=${CI_REGISTRY_IMAGE:-ljocha}
-VERSION=:2019.11.08-1
+VERSION=:2019.11.15-1
 
 cd plumed &&
 docker build --pull -t "$IMAGE/plumed$VERSION" . &&

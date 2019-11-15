@@ -23,10 +23,10 @@ RUN cmake -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=/usr/local ../ && make -j 4
 
 
 #get plumed
-ENV PLUMED_VERSION=v2.5.3
+ENV PLUMED_VERSION=v2.6b
 RUN git clone https://github.com/plumed/plumed2 --branch $PLUMED_VERSION --single-branch /srv/plumed
 WORKDIR /srv/plumed
-RUN ./configure --enable-asmjit --enable-modules=all && make -j4 && make install && make clean
+RUN ./configure --enable-asmjit --enable-modules=all --enable-modules=annfunc && make -j4 && make install && make clean
 
 
 ENV SHELL /bin/bash
