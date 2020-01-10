@@ -15,7 +15,7 @@ PLUMED_VERSION=v2.6b
 id=$(shell id -u)
 
 
-all: build-plumed build-gromacs build-fmacnt
+all: build-plumed build-gromacs build-fmacnt gromacs/gmx-docker
 
 build-plumed:
 	git clone https://github.com/plumed/plumed2 --branch $PLUMED_VERSION --single-branch plumed/plumed2 &&
