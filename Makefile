@@ -18,7 +18,7 @@ id=$(shell id -u)
 all: build-plumed build-gromacs build-fmacnt gromacs/gmx-docker
 
 build-plumed:
-	git clone https://github.com/plumed/plumed2 --branch ${PLUMED_VERSION} --single-branch plumed/plumed2 &&
+	git clone https://github.com/plumed/plumed2 --branch ${PLUMED_VERSION} --single-branch plumed/plumed2
 	curl -o fftw.tar.gz http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz  
 	echo "${FFTW_MD5}  fftw.tar.gz" > fftw.tar.gz.md5 && md5sum -c fftw.tar.gz.md5 
 	mv fftw.tar.gz plumed
