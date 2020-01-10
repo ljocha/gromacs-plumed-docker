@@ -31,6 +31,7 @@ COPY plumed2 /build/plumed2
 
 RUN ls /build
 RUN cd plumed2 && ./configure --enable-modules=all --enable-modules=annfunc && make -j4 && make install && make clean
+RUN ldconfig
 # 
 # 
 # ENV SHELL /bin/bash
