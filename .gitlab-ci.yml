@@ -5,7 +5,7 @@ services:
 
 before_script:
 - ip a s
-- apk add --update bash make sed
+- apk add --update bash make sed git curl
 - docker version
 - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" "$CI_REGISTRY"
 
