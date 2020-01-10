@@ -45,7 +45,7 @@ build-gromacs: gromacs-src
 		echo build args: ARCH=$$arch RDTSCP=$$rdtscp DOUBLE=$$double ; \
 		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs && \
 		docker push "${IMAGE}/gromacs_$$flavor${VERSION}" || break ; \
-	done <gromacs/flavors.txt.test
+	done <gromacs/flavors.txt
 		
 gromacs/gmx-docker: gromacs/gmx-docker.in Makefile
 	sed "s/%VERSION%/${VERSION}/g; s/%IMAGE%/${IMAGE}/g" gromacs/gmx-docker.in >$@
