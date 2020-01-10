@@ -1,0 +1,54 @@
+#!/bin/bash
+
+IMAGE=%IMAGE%
+VERSION=%VERSION%
+DEFAULT_VERSION=$VERSION
+
+FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
+if echo $FLAGS | grep " avx512f " > /dev/null && docker run "${IMAGE}/gromacs-fmacnt${VERSION}" | grep "2" > /dev/null; then
+    ARCH="avx512"
+elif echo $FLAGS | grep " avx2 " > /dev/null; then
+    ARCH="avx2"
+elif echo $FLAGS | grep " avx " > /dev/null; then
+    ARCH="avx"
+else
+    ARCH="sse2"
+fi
+
+if echo $FLAGS | grep rdtscp >/dev/null; then
+	RDTSCP=_ts
+fi
+
+DOUBLE=""
+
+set -- $(getopt da:rRv:h "$@")
+
+while [ $1 != '--' ]; do case $1 in
+	-d) DOUBLE="_d"; shift ;;
+	-a) ARCH="$2"; shift; shift ;;
+	-r) RDTSCP="_ts"; shift ;;
+	-R) RDTSCP=""; shift ;;
+	-v) VERSION=":$2"; shift; shift ;;
+	-h) cat >&2 <<EOF
+usage: $0 options [--] gromacs_args ...
+
+options are:
+	-d		double precision
+	-a arch		enforce specific CPU architecture (sse2, avx, avx2, avx512)
+	-r		enforce RDTSCP (should be detected)
+	-R		disable RDTSCP
+	-v version	use specific docker image version ($DEFAULT_VERSION by default)
+EOF
+	exit 1;;
+	--) shift; break ;;
+esac; done
+
+while [ "$1" == '--' ]; do shift; done
+
+# XXX: _ts_d should work fine but we don't build it
+if [ -n "$DOUBLE" ]; then 
+	RDTSCP=""; 
+	echo warning: disabling RDTSCP with double precision >&2
+fi
+
+docker run ${IMAGE}/gromacs_${ARCH}${RDTSCP}${DOUBLE}${VERSION} "$@"
