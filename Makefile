@@ -2,7 +2,9 @@
 
 CI_REGISTRY_IMAGE?=ljocha
 IMAGE=${CI_REGISTRY_IMAGE}
-VERSION=:2020.01.10-1
+VERSION=:2020.01.14-1
+PLUMED_IMAGE_VERSION=:2020.01.10-1
+
 
 GROMACS_VERSION=2018.8
 GROMACS_MD5=12fe6c41c1ed76ed8227c6d37c465ff4
@@ -22,8 +24,8 @@ build-plumed:
 	curl -o fftw.tar.gz http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz  
 	echo "${FFTW_MD5}  fftw.tar.gz" > fftw.tar.gz.md5 && md5sum -c fftw.tar.gz.md5 
 	mv fftw.tar.gz plumed
-	cd plumed && docker build --pull -t "${IMAGE}/plumed${VERSION}" --build-arg PLUMED_VERSION=${PLUMED_VERSION} --build-arg FFTW_VERSION=${FFTW_VERSION} .
-	docker push "${IMAGE}/plumed${VERSION}"
+	cd plumed && docker build --pull -t "${IMAGE}/plumed${PLUMED_IMAGE_VERSION}" --build-arg PLUMED_VERSION=${PLUMED_VERSION} --build-arg FFTW_VERSION=${FFTW_VERSION} .
+	docker push "${IMAGE}/plumed${PLUMED_IMAGE_VERSION}"
 
 gromacs-src:
 	curl -o gromacs.tar.gz http://ftp.gromacs.org/pub/gromacs/gromacs-${GROMACS_VERSION}.tar.gz
@@ -43,7 +45,7 @@ build-gromacs: gromacs-src
 	tar cf - gromacs-src | (cd gromacs && tar xf -)
 	while read flavor arch rdtscp double; do\
 		echo build args: ARCH=$$arch RDTSCP=$$rdtscp DOUBLE=$$double ; \
-		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs && \
+		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs && \
 		docker push "${IMAGE}/gromacs_$$flavor${VERSION}" || break ; \
 	done <gromacs/flavors.txt
 		

@@ -66,6 +66,3 @@ ENV PATH=$PATH:/gromacs/bin
 RUN ldconfig
 
 WORKDIR /tmp
-
-# Enable the entrypoint to use the dockerfile as a GROMACS binary
-ENTRYPOINT [ "/gromacs/bin/gmx" ]
