@@ -10,6 +10,7 @@ MAINTAINER Ales Krenek <ljocha@ics.muni.cz>
 
 ARG FFTW_VERSION
 ARG PLUMED_VERSION
+ARG JOBS=4
 
 #enable contributed packages
 #RUN sed -i 's/main/main contrib/g' /etc/apt/sources.list
@@ -30,7 +31,7 @@ RUN tar -xzvf /tmp/fftw.tar.gz && cd fftw-${FFTW_VERSION} \
 COPY plumed2 /build/plumed2
 
 RUN ls /build
-RUN cd plumed2 && ./configure --enable-modules=all --enable-modules=annfunc && make -j4 && make install && make clean
+RUN cd plumed2 && ./configure --enable-modules=all --enable-modules=annfunc && make -j ${JOBS} && make install && make clean
 RUN ldconfig
 # 
 # 

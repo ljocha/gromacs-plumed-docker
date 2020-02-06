@@ -29,7 +29,7 @@ RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_DEFAULT_SUFFIX=OFF \
     -DCMAKE_INSTALL_PREFIX=/gromacs \
 #    -DREGRESSIONTEST_DOWNLOAD=ON \
-    -DGMX_USE_NVML=OFF \
+#    -DGMX_USE_NVML=OFF \
     -DGMX_USE_RDTSCP=${RDTSCP} \
     -DGMX_SIMD=${ARCH} \
   && make -j ${JOBS} \

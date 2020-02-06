@@ -2,17 +2,20 @@
 
 CI_REGISTRY_IMAGE?=ljocha
 IMAGE=${CI_REGISTRY_IMAGE}
-VERSION=:2020.01.14-1
-PLUMED_IMAGE_VERSION=:2020.01.10-1
+VERSION=:2020.02.06-1
+PLUMED_IMAGE_VERSION=:2020.02.06-1
 
 
-GROMACS_VERSION=2018.8
-GROMACS_MD5=12fe6c41c1ed76ed8227c6d37c465ff4
+GROMACS_VERSION=2019.4
+GROMACS_PATCH_VERSION=${GROMACS_VERSION}
+GROMACS_MD5=b424b9099f8bb00e1cd716a1295d797e
 
 FFTW_VERSION=3.3.8
 FFTW_MD5=8aac833c943d8e90d51b697b27d4384d
 
-PLUMED_VERSION=v2.6b
+PLUMED_VERSION=v2.6.0
+
+JOBS?=16
 
 id=$(shell id -u)
 
@@ -24,7 +27,7 @@ build-plumed:
 	curl -o fftw.tar.gz http://www.fftw.org/fftw-${FFTW_VERSION}.tar.gz  
 	echo "${FFTW_MD5}  fftw.tar.gz" > fftw.tar.gz.md5 && md5sum -c fftw.tar.gz.md5 
 	mv fftw.tar.gz plumed
-	cd plumed && docker build --pull -t "${IMAGE}/plumed${PLUMED_IMAGE_VERSION}" --build-arg PLUMED_VERSION=${PLUMED_VERSION} --build-arg FFTW_VERSION=${FFTW_VERSION} .
+	cd plumed && docker build --pull -t "${IMAGE}/plumed${PLUMED_IMAGE_VERSION}" --build-arg PLUMED_VERSION=${PLUMED_VERSION} --build-arg FFTW_VERSION=${FFTW_VERSION} --build-arg JOBS=${JOBS} .
 	docker push "${IMAGE}/plumed${PLUMED_IMAGE_VERSION}"
 
 gromacs-src:
@@ -33,7 +36,7 @@ gromacs-src:
 	md5sum -c gromacs.tar.gz.md5
 	tar xzf gromacs.tar.gz
 	mv gromacs-${GROMACS_VERSION} gromacs-src
-	docker run -v ${PWD}/gromacs-src:/gromacs-src -w /gromacs-src -u ${id} "${IMAGE}/plumed${VERSION}" plumed patch -e gromacs-${GROMACS_VERSION} -p
+	docker run -v ${PWD}/gromacs-src:/gromacs-src -w /gromacs-src -u ${id} "${IMAGE}/plumed${VERSION}" plumed patch -e gromacs-${GROMACS_PATCH_VERSION} -p
 
 build-fmacnt: gromacs-src
 	tar cf - gromacs-src | (cd fmacnt && tar xf -)
@@ -45,23 +48,10 @@ build-gromacs: gromacs-src
 	tar cf - gromacs-src | (cd gromacs && tar xf -)
 	while read flavor arch rdtscp double; do\
 		echo build args: ARCH=$$arch RDTSCP=$$rdtscp DOUBLE=$$double ; \
-		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs && \
+		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs --build-arg JOBS=${JOBS} && \
 		docker push "${IMAGE}/gromacs_$$flavor${VERSION}" || break ; \
 	done <gromacs/flavors.txt
 		
 gromacs/gmx-docker: gromacs/gmx-docker.in Makefile
 	sed "s/%VERSION%/${VERSION}/g; s?%IMAGE%?${IMAGE}?g" gromacs/gmx-docker.in >$@
 	chmod +x $@
-
-
-
-#	docker build --pull -t "${IMAGE}/gromacs${VERSION}" gromacs
-#	docker push "${IMAGE}/gromacs${VERSION}"
-
-
-
-
-
-#cd ../gromacs &&
-#docker build --pull -t "$IMAGE/gromacs$VERSION" --build-arg PLUMED_IMAGE="$IMAGE/plumed$VERSION" . &&
-#docker push "$IMAGE/gromacs$VERSION"
