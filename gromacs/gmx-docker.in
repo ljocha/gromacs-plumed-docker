@@ -2,6 +2,7 @@
 
 IMAGE=%IMAGE%
 VERSION=%VERSION%
+
 DEFAULT_VERSION=$VERSION
 
 FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
@@ -20,8 +21,9 @@ if echo $FLAGS | grep rdtscp >/dev/null; then
 fi
 
 DOUBLE=""
+WORKDIR_CURRENT=""
 
-eval set -- $(getopt -o +da:rRv:n:h -- "$@")
+eval set -- $(getopt -o +da:rw:Rv:n:h -- "$@")
 unset MPI
 
 while [ $1 != '--' ]; do case $1 in
@@ -29,6 +31,7 @@ while [ $1 != '--' ]; do case $1 in
 	-d) DOUBLE="_d"; shift ;;
 	-a) ARCH="$2"; shift; shift ;;
 	-r) RDTSCP="_ts"; shift ;;
+	-w) WORKDIR_CURRENT="$2"; shift; shift ;;
 	-R) RDTSCP=""; shift ;;
 	-v) VERSION=":$2"; shift; shift ;;
 	-h) cat >&2 <<EOF
@@ -39,6 +42,7 @@ options are:
 	-d		double precision
 	-a arch		enforce specific CPU architecture (sse2, avx, avx2, avx512)
 	-r		enforce RDTSCP (should be detected)
+	-w		select working directory relative to shared one for current enumeration
 	-R		disable RDTSCP
 	-v version	use specific docker image version ($DEFAULT_VERSION by default)
 EOF
@@ -55,7 +59,7 @@ if [ -n "$DOUBLE" ]; then
 fi
 
 if [ -z "$WORKDIR_OUTSIDE" ]; then
-	WORKDIR_OUTSIDE=$PWD
+	WORKDIR_OUTSIDE=${WORK:-$PWD}
 fi
 
 unset MPIRUN
@@ -63,4 +67,4 @@ if [ -n "$MPI" ]; then
 	MPIRUN="mpirun -np $MPI"
 fi
 
-docker run -u $(id -u):$(id -g) -i -v $WORKDIR_OUTSIDE:/tmp ${IMAGE}/gromacs_${ARCH}${RDTSCP}${DOUBLE}${VERSION} $MPIRUN gmx "$@"
+docker run -u $(id -u):$(id -g) -i -v ${WORKDIR_OUTSIDE}${WORKDIR_CURRENT}:/tmp ${IMAGE}/gromacs_${ARCH}${RDTSCP}${DOUBLE}${VERSION} $MPIRUN gmx "$@"
