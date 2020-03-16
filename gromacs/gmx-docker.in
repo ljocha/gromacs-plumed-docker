@@ -81,8 +81,13 @@ if [ -n "$PODMAN" ]; then
 cp /host/usr/lib/nvidia/current/nvidia-smi /usr/bin
 cp -rP /host/usr/lib/x86_64-linux-gnu/nvidia/current/* /usr/lib/x86_64-linux-gnu
 cp -rP /host/usr/lib/mesa-diverted/x86_64-linux-gnu/* /usr/lib/x86_64-linux-gnu
-$MPIRUN gmx "$@"
 EOF
+	echo -n $MPIRUN gmx >>/tmp/gmx-podman.$$
+	for a in "$@"; do
+		echo -n " "\"$a\" >>/tmp/gmx-podman.$$
+	done
+	echo >>/tmp/gmx-podman.$$
+
 	chmod +x /tmp/gmx-podman.$$
 	/tmp/gmx-podman.$$
 #	rm /tmp/gmx-podman.$$
