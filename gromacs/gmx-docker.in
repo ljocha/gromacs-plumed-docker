@@ -5,27 +5,14 @@ VERSION=%VERSION%
 
 DEFAULT_VERSION=$VERSION
 
-FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
-if echo $FLAGS | grep " avx512f " > /dev/null && docker run "${IMAGE_BASE}/gromacs-fmacnt${VERSION}" | grep "2" > /dev/null; then
-    ARCH="avx512"
-elif echo $FLAGS | grep " avx2 " > /dev/null; then
-    ARCH="avx2"
-elif echo $FLAGS | grep " avx " > /dev/null; then
-    ARCH="avx"
-else
-    ARCH="sse2"
-fi
-
-if echo $FLAGS | grep rdtscp >/dev/null; then
-	RDTSCP=_ts
-fi
-
 DOUBLE=""
 WORKDIR_CURRENT=""
 
 eval set -- $(getopt -o +pda:rw:Rv:n:h -- "$@")
 unset MPI
 unset PODMAN
+unset ARCH
+unset RDTSCP
 
 while [ $1 != '--' ]; do case $1 in
 	-n) MPI="$2"; shift; shift ;;
@@ -52,6 +39,33 @@ EOF
 	exit 1;;
 	--) shift; break ;;
 esac; done
+
+FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
+
+if [ -z "$ARCH" ]; then
+	if [ -n "$PODMAN" ]; then
+		FMA="$(/usr/bin/podmanwrapper "${IMAGE_BASE}/gromacs-fmacnt${VERSION}" true)"
+	else
+		FMA="$(docker run "${IMAGE_BASE}/gromacs-fmacnt${VERSION}")"
+	fi
+
+	if echo $FLAGS | grep " avx512f " > /dev/null && echo "$FMA" | grep "^2" > /dev/null; then
+	    ARCH="avx512"
+	elif echo $FLAGS | grep " avx2 " > /dev/null; then
+	    ARCH="avx2"
+	elif echo $FLAGS | grep " avx " > /dev/null; then
+	    ARCH="avx"
+	else
+	    ARCH="sse2"
+	fi
+fi
+	
+if [ -z "$RDTSCP" ]; then
+	if echo $FLAGS | grep rdtscp >/dev/null; then
+		RDTSCP=_ts
+	fi
+fi
+
 
 while [ "$1" == '--' ]; do shift; done
 
