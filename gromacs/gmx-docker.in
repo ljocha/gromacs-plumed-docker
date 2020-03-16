@@ -1,12 +1,12 @@
 #!/bin/bash
 
-IMAGE=%IMAGE%
+IMAGE_BASE=%IMAGE%
 VERSION=%VERSION%
 
 DEFAULT_VERSION=$VERSION
 
 FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
-if echo $FLAGS | grep " avx512f " > /dev/null && docker run "${IMAGE}/gromacs-fmacnt${VERSION}" | grep "2" > /dev/null; then
+if echo $FLAGS | grep " avx512f " > /dev/null && docker run "${IMAGE_BASE}/gromacs-fmacnt${VERSION}" | grep "2" > /dev/null; then
     ARCH="avx512"
 elif echo $FLAGS | grep " avx2 " > /dev/null; then
     ARCH="avx2"
@@ -23,8 +23,9 @@ fi
 DOUBLE=""
 WORKDIR_CURRENT=""
 
-eval set -- $(getopt -o +da:rw:Rv:n:h -- "$@")
+eval set -- $(getopt -o +pda:rw:Rv:n:h -- "$@")
 unset MPI
+unset PODMAN
 
 while [ $1 != '--' ]; do case $1 in
 	-n) MPI="$2"; shift; shift ;;
@@ -34,6 +35,7 @@ while [ $1 != '--' ]; do case $1 in
 	-w) WORKDIR_CURRENT="$2"; shift; shift ;;
 	-R) RDTSCP=""; shift ;;
 	-v) VERSION=":$2"; shift; shift ;;
+	-p) PODMAN=y; shift ;;
 	-h) cat >&2 <<EOF
 usage: $0 options [--] gromacs_args ...
 
@@ -44,6 +46,7 @@ options are:
 	-r		enforce RDTSCP (should be detected)
 	-w		select working directory relative to shared one for current enumeration
 	-R		disable RDTSCP
+	-p		use podman instead of docker
 	-v version	use specific docker image version ($DEFAULT_VERSION by default)
 EOF
 	exit 1;;
@@ -67,4 +70,23 @@ if [ -n "$MPI" ]; then
 	MPIRUN="mpirun -np $MPI"
 fi
 
-docker run -u $(id -u):$(id -g) -i -v ${WORKDIR_OUTSIDE}${WORKDIR_CURRENT}:/tmp ${IMAGE}/gromacs_${ARCH}${RDTSCP}${DOUBLE}${VERSION} $MPIRUN gmx "$@"
+IMAGE=${IMAGE_BASE}/gromacs_${ARCH}${RDTSCP}${DOUBLE}${VERSION} 
+VOLUME=${WORKDIR_OUTSIDE}${WORKDIR_CURRENT}:/tmp
+
+if [ -n "$PODMAN" ]; then
+	cat - >/tmp/gmx-podman.$$ <<EOF
+#!/usr/bin/podmanwrapper $IMAGE
+#PODMAN_OPT -i -v $VOLUME
+
+cp /host/usr/lib/nvidia/current/nvidia-smi /usr/bin
+cp -rP /host/usr/lib/x86_64-linux-gnu/nvidia/current/* /usr/lib/x86_64-linux-gnu
+cp -rP /host/usr/lib/mesa-diverted/x86_64-linux-gnu/* /usr/lib/x86_64-linux-gnu
+$MPIRUN gmx "$@"
+EOF
+	chmod +x /tmp/gmx-podman.$$
+	/tmp/gmx-podman.$$
+#	rm /tmp/gmx-podman.$$
+
+else
+	docker run -u $(id -u):$(id -g) -i -v $VOLUME ${IMAGE} $MPIRUN gmx "$@"
+fi
