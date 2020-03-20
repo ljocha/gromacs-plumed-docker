@@ -8,17 +8,19 @@ DEFAULT_VERSION=$VERSION
 DOUBLE=""
 WORKDIR_CURRENT=""
 
-eval set -- $(getopt -o +pda:rw:Rv:n:h -- "$@")
+eval set -- $(getopt -o +pcda:rw:Rv:n:h -- "$@")
 unset MPI
 unset PODMAN
 unset ARCH
 unset RDTSCP
+unset CLEAN
 
 while [ $1 != '--' ]; do case $1 in
 	-n) MPI="$2"; shift; shift ;;
 	-d) DOUBLE="_d"; shift ;;
 	-a) ARCH="$2"; shift; shift ;;
 	-r) RDTSCP="_ts"; shift ;;
+	-c) CLEAN=y; shift ;;
 	-w) WORKDIR_CURRENT="$2"; shift; shift ;;
 	-R) RDTSCP=""; shift ;;
 	-v) VERSION=":$2"; shift; shift ;;
@@ -33,6 +35,7 @@ options are:
 	-r		enforce RDTSCP (should be detected)
 	-w		select working directory relative to shared one for current enumeration
 	-R		disable RDTSCP
+	-c		cleanup -- just remove docker image 
 	-p		use podman instead of docker
 	-v version	use specific docker image version ($DEFAULT_VERSION by default)
 EOF
@@ -104,8 +107,20 @@ EOF
 
 	chmod +x /tmp/gmx-podman.$$
 	/tmp/gmx-podman.$$
-#	rm /tmp/gmx-podman.$$
+	rm /tmp/gmx-podman.$$
 
 else
-	docker run -u $(id -u):$(id -g) -i -v $VOLUME ${IMAGE} $MPIRUN gmx "$@"
+# XXX: always grab all gpus
+	if [ $(docker -v | sed 's/Docker version //; s/\..*$//;') -ge 19 ]; then
+		gpu="--gpus all --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm"
+		for d in /dev/nvidia[0-9]*; do
+			gpu="$gpu --device $d:$d"
+		done
+	fi
+
+	if [ -n "$CLEAN" ]; then
+		docker rmi --force ${IMAGE}
+	else
+		docker run $gpu -u $(id -u):$(id -g) -i -v $VOLUME ${IMAGE} $MPIRUN gmx "$@"
+	fi
 fi
