@@ -40,13 +40,24 @@ EOF
 	--) shift; break ;;
 esac; done
 
+if [ -n "$PODMAN" ]; then
+	if [ -z "$SCRATCHDIR" ]; then
+		echo Warning: SCRATCHDIR not set, / may be filled up >&2
+	else
+		TMPDIR=$SCRATCHDIR
+		export TMPDIR
+	fi
+	podman="podman --runtime /usr/bin/crun --root=${PWD}"
+	podman_run="$podman run --privileged --cgroups disabled --hostname ${HOSTNAME}"
+fi
+
 FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
 
 if [ -z "$ARCH" ]; then
 	if [ -n "$PODMAN" ]; then
-		FMA="$(/usr/bin/podmanwrapper "${IMAGE_BASE}/gromacs-fmacnt${VERSION}" true)"
+		FMA="$($podman_run ${IMAGE_BASE}/gromacs-fmacnt${VERSION})"
 	else
-		FMA="$(docker run "${IMAGE_BASE}/gromacs-fmacnt${VERSION}")"
+		FMA="$(docker run ${IMAGE_BASE}/gromacs-fmacnt${VERSION})"
 	fi
 
 	if echo $FLAGS | grep " avx512f " > /dev/null && echo "$FMA" | grep "^2" > /dev/null; then
@@ -89,8 +100,7 @@ VOLUME=${WORKDIR_OUTSIDE}${WORKDIR_CURRENT}:/tmp
 
 if [ -n "$PODMAN" ]; then
 	cat - >/tmp/gmx-podman.$$ <<EOF
-#!/usr/bin/podmanwrapper $IMAGE
-#PODMAN_OPT -i -v $VOLUME
+#!/bin/bash
 
 cp /host/usr/lib/nvidia/current/nvidia-smi /usr/bin
 cp -rP /host/usr/lib/x86_64-linux-gnu/nvidia/current/* /usr/lib/x86_64-linux-gnu
@@ -103,8 +113,9 @@ EOF
 	echo >>/tmp/gmx-podman.$$
 
 	chmod +x /tmp/gmx-podman.$$
-	/tmp/gmx-podman.$$
-#	rm /tmp/gmx-podman.$$
+
+	$podman_run -v /:/host -v $VOLUME -ti  $IMAGE /host/tmp/gmx-podman.$$
+	rm /tmp/gmx-podman.$$
 
 else
 	docker run -u $(id -u):$(id -g) -i -v $VOLUME ${IMAGE} $MPIRUN gmx "$@"
