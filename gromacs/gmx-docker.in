@@ -117,7 +117,7 @@ EOF
 
 	chmod +x /tmp/gmx-podman.$$
 
-	$podman_run -v /:/host -v $VOLUME -ti  $IMAGE /host/tmp/gmx-podman.$$
+	$podman_run -e CUDA_VISIBLE_DEVICES -e CUDA_DEVICE_ORDER -v /:/host -v $VOLUME -ti  $IMAGE /host/tmp/gmx-podman.$$
 	rm /tmp/gmx-podman.$$
 
 else
@@ -132,6 +132,6 @@ else
 	if [ -n "$CLEAN" ]; then
 		docker rmi --force ${IMAGE}
 	else
-		docker run $gpu -u $(id -u):$(id -g) -i -v $VOLUME ${IMAGE} $MPIRUN gmx "$@"
+		docker run -e CUDA_VISIBLE_DEVICES -e CUDA_DEVICE_ORDER $gpu -u $(id -u):$(id -g) -i -v $VOLUME ${IMAGE} $MPIRUN gmx "$@"
 	fi
 fi
