@@ -41,7 +41,7 @@ options are:
 	-R		disable RDTSCP
 	-c		cleanup -- just remove docker image 
 	-p		use podman instead of docker
-	-i		specify input for gromacs
+	-i		specify char input for gromacs
 	-m		specify string input for gromacs
 	-v version	use specific docker image version ($DEFAULT_VERSION by default)
 EOF
