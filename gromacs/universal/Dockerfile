@@ -1,4 +1,3 @@
-
 ARG PLUMED_IMAGE
 ARG BASE_ARCH_IMAGE
 
@@ -18,19 +17,25 @@ WORKDIR /gromacs-build/build
 ###############################################################################
 RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_OPENMP=ON \
+    -DGMX_GPU=OFF \
     -DGMX_MPI=ON \
-        -DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DOUBLE=ON \
+    -DGMX_BUILD_OWN_FFTW=ON \
+    -DGMX_BUILD_MDRUN_ONLY=ON \
     -DGMX_DEFAULT_SUFFIX=OFF \
-    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512_ts \
-    -DGMX_USE_RDTSCP=ON \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512 \
+    -DGMX_USE_RDTSCP=OFF \
     -DGMX_SIMD=AVX_512 \
   && make -j ${JOBS} \
   && make install; done
 
 RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_OPENMP=ON \
+    -DGMX_GPU=OFF \
     -DGMX_MPI=ON \
-        -DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DOUBLE=ON \
+    -DGMX_BUILD_OWN_FFTW=ON \
+    -DGMX_BUILD_MDRUN_ONLY=ON \
     -DGMX_DEFAULT_SUFFIX=OFF \
     -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256 \
     -DGMX_USE_RDTSCP=OFF \
@@ -38,14 +43,18 @@ RUN CC=gcc CXX=g++ cmake ../src \
   && make -j ${JOBS} \
   && make install; done
 
+
 RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_OPENMP=ON \
+    -DGMX_GPU=OFF \
     -DGMX_MPI=ON \
-        -DGMX_BUILD_MDRUN_ONLY=${MDRUNONLY} \
+    -DGMX_DOUBLE=ON \
+    -DGMX_BUILD_OWN_FFTW=ON \
+    -DGMX_BUILD_MDRUN_ONLY=ON \
     -DGMX_DEFAULT_SUFFIX=OFF \
-    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256_ts \
-    -DGMX_USE_RDTSCP=ON \
-    -DGMX_SIMD=AVX2_256 \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/SSE2 \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=SSE2 \
   && make -j ${JOBS} \
   && make install; done
 
@@ -62,8 +71,7 @@ COPY --from=builder /gromacs /gromacs
 COPY universal/gmx-chooser.sh /opt
 
 ENV PATH=$PATH:/gromacs/bin
- 
+
 RUN ldconfig
 
 WORKDIR /tmp
-
