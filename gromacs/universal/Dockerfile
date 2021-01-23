@@ -16,6 +16,8 @@ WORKDIR /gromacs-build/build
 ###############################################################################
 # Build possible mdruns
 ###############################################################################
+# AVX_512
+###############################################################################
 RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_OPENMP=ON \
 	-DGMX_GPU=OFF \
@@ -24,7 +26,7 @@ RUN CC=gcc CXX=g++ cmake ../src \
 	-DGMX_BUILD_OWN_FFTW=ON \
 	-DGMX_BUILD_MDRUN_ONLY=ON \
     -DGMX_DEFAULT_SUFFIX=OFF \
-    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512 \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512_d \
     -DGMX_USE_RDTSCP=OFF \
     -DGMX_SIMD=AVX_512 \
   && make -j ${JOBS} \
@@ -32,9 +34,40 @@ RUN CC=gcc CXX=g++ cmake ../src \
 
 RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512_ts \
+    -DGMX_USE_RDTSCP=ON \
+    -DGMX_SIMD=AVX_512 \
+  && make -j ${JOBS} \
+  && make install; done
+
+###############################################################################
+# AVX2_256
+###############################################################################
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
 	-DGMX_GPU=OFF \
     -DGMX_MPI=ON \
 	-DGMX_DOUBLE=ON \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256_d \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=AVX2_256 \
+  && make -j ${JOBS} \
+  && make install; done
+
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
 	-DGMX_BUILD_OWN_FFTW=ON \
 	-DGMX_BUILD_MDRUN_ONLY=ON \
     -DGMX_DEFAULT_SUFFIX=OFF \
@@ -46,9 +79,40 @@ RUN CC=gcc CXX=g++ cmake ../src \
 
 RUN CC=gcc CXX=g++ cmake ../src \
     -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256_ts \
+    -DGMX_USE_RDTSCP=ON \
+    -DGMX_SIMD=AVX2_256 \
+  && make -j ${JOBS} \
+  && make install; done
+
+###############################################################################
+# SSE2 
+###############################################################################
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
 	-DGMX_GPU=OFF \
     -DGMX_MPI=ON \
 	-DGMX_DOUBLE=ON \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \	
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/SSE2_d \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=SSE2 \
+  && make -j ${JOBS} \
+  && make install; done
+
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
 	-DGMX_BUILD_OWN_FFTW=ON \
 	-DGMX_BUILD_MDRUN_ONLY=ON \	
     -DGMX_DEFAULT_SUFFIX=OFF \
