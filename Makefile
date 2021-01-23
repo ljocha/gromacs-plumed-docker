@@ -49,14 +49,15 @@ build-gromacs: gromacs-src
 	tar cf - gromacs-src | (cd gromacs && tar xf -)
 	while read flavor arch rdtscp double; do\
 		echo build args: ARCH=$$arch RDTSCP=$$rdtscp DOUBLE=$$double ; \
-		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs --build-arg JOBS=${JOBS} ; \
+		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs --build-arg JOBS=${JOBS} && \
 		docker push "${IMAGE}/gromacs_$$flavor${VERSION}" || break ; \
 	done <gromacs/flavors.txt
 
 build-universal-gromacs: gromacs-src
 	tar cf - gromacs-src | (cd gromacs && tar xf -)
-	docker build --pull -t "${IMAGE}/gromacs_universal${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=SSE2 --build-arg RDTSCP=OFF --build-arg DOUBLE=OFF --build-arg JOBS=${JOBS} gromacs
-	docker build -t ${IMAGE}/gromacs_universal${VERSION} --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg BASE_ARCH_IMAGE=${IMAGE}/gromacs_universal${VERSION} --build-arg JOBS=${JOBS} -f gromacs/universal/Dockerfile gromacs
+	docker build --pull -t "${IMAGE}/gromacs_universal_base${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=SSE2 --build-arg RDTSCP=OFF --build-arg DOUBLE=OFF --build-arg JOBS=${JOBS} gromacs
+	docker build -t ${IMAGE}/gromacs_universal${VERSION} --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg BASE_ARCH_IMAGE=${IMAGE}/gromacs_universal_base${VERSION} --build-arg JOBS=${JOBS} -f gromacs/universal/Dockerfile gromacs
+	docker push "${IMAGE}/gromacs_universal${VERSION}"
 
 gromacs/gmx-docker: gromacs/gmx-docker.in Makefile
 	sed "s/%VERSION%/${VERSION}/g; s?%IMAGE%?${IMAGE}?g" gromacs/gmx-docker.in >$@
