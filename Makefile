@@ -21,7 +21,7 @@ id=$(shell id -u)
 
 
 all: gromacs/gmx-docker build-plumed build-gromacs build-fmacnt
-universal: gromacs/gmx-docker build-plumed build-universal-gromacs build-fmacnt
+universal: gromacs/gmx-docker build-plumed build-universal-gromacs
 
 build-plumed:
 	git clone https://github.com/plumed/plumed2 --branch ${PLUMED_VERSION} --single-branch plumed/plumed2
