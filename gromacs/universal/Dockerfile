@@ -13,6 +13,13 @@ RUN mkdir -p /gromacs-build/src /gromacs-build/build
 COPY gromacs-src /gromacs-build/src
 WORKDIR /gromacs-build/build
 
+RUN g++ -O3 -mavx512f -std=c++11 \
+    -DGMX_IDENTIFY_AVX512_FMA_UNITS_STANDALONE=1 \
+    -DGMX_X86_GCC_INLINE_ASM=1 \
+    -DSIMD_AVX_512_CXX_SUPPORTED=1 \
+    -o /usr/local/bin/identifyavx512fmaunits \
+	/gromacs-build/src/src/gromacs/hardware/identifyavx512fmaunits.cpp 
+
 ###############################################################################
 # Build possible mdruns
 ###############################################################################
@@ -129,10 +136,11 @@ FROM $BASE_ARCH_IMAGE
 
 COPY --from=builder /usr/local/lib /usr/local/lib
 COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/bin/identifyavx512fmaunits /usr/local/bin
 
 # copy gromacs install
 COPY --from=builder /gromacs /gromacs
-COPY universal/gmx-chooser.sh /opt
+COPY universal/mdrun-chooser.sh /opt
 
 ENV PATH=$PATH:/gromacs/bin
  
