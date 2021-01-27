@@ -49,7 +49,7 @@ build-gromacs: gromacs-src
 	tar cf - gromacs-src | (cd gromacs && tar xf -)
 	while read flavor arch rdtscp double; do\
 		echo build args: ARCH=$$arch RDTSCP=$$rdtscp DOUBLE=$$double ; \
-		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs --build-arg JOBS=${JOBS} && \
+		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs --build-arg JOBS=${JOBS} ; \
 		docker push "${IMAGE}/gromacs_$$flavor${VERSION}" || break ; \
 	done <gromacs/flavors.txt
 
