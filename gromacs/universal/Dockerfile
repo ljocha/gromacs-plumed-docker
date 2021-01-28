@@ -141,7 +141,8 @@ COPY --from=builder /usr/local/bin/identifyavx512fmaunits /usr/local/bin
 COPY --from=builder /gromacs /gromacs
 COPY universal/mdrun-chooser.sh /opt
 
-ENV PATH=$PATH:/gromacs/bin
+ENV PROMPT_COMMAND="source /opt/mdrun-chooser.sh" \
+	BASH_ENV="/opt/mdrun-chooser.sh"
  
 RUN ldconfig
 

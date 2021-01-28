@@ -1,13 +1,25 @@
 #!/bin/sh
-
+  
 unset double
 unset rdtscp
-if [ ! -z $DOUBLE ]; then
-        double="_d"
+unset arch
+
+if [ -z $PATH_LENGTH ]; then
+        PATH_LENGTH=${#PATH}
+        export PATH_LENGTH
 fi
 
-if [ ! -z $RDTSCP ]; then
+PATH=${PATH:0:PATH_LENGTH}
+if [ $DOUBLE = "ON" ]; then
+        double="_d"
+fi
+if [ $RDTSCP = "ON" ]; then
         rdtscp="_ts"
+fi
+if [ ! -z $ARCH ]; then
+        PATH=$PATH:/gromacs/${ARCH}${double}${rdtscp}/bin
+        export PATH
+        return 0
 fi
 
 FLAGS=`cat /proc/cpuinfo | grep ^flags | head -1`
@@ -20,4 +32,3 @@ else
 fi
 
 export PATH
-
