@@ -21,6 +21,7 @@ id=$(shell id -u)
 
 
 all: gromacs/gmx-docker build-plumed build-gromacs build-fmacnt
+universal: gromacs/gmx-docker build-plumed build-universal-gromacs
 
 build-plumed:
 	git clone https://github.com/plumed/plumed2 --branch ${PLUMED_VERSION} --single-branch plumed/plumed2
@@ -51,7 +52,13 @@ build-gromacs: gromacs-src
 		docker build --pull -t "${IMAGE}/gromacs_$$flavor${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=$$arch --build-arg RDTSCP=$$rdtscp --build-arg DOUBLE=$$double gromacs --build-arg JOBS=${JOBS} && \
 		docker push "${IMAGE}/gromacs_$$flavor${VERSION}" || break ; \
 	done <gromacs/flavors.txt
-		
+
+build-universal-gromacs: gromacs-src
+	tar cf - gromacs-src | (cd gromacs && tar xf -)
+	docker build --pull -t "${IMAGE}/gromacs_universal_base${VERSION}" --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg ARCH=SSE2 --build-arg RDTSCP=OFF --build-arg DOUBLE=OFF --build-arg JOBS=${JOBS} gromacs
+	docker build -t ${IMAGE}/gromacs_universal${VERSION} --build-arg PLUMED_IMAGE=${IMAGE}/plumed${PLUMED_IMAGE_VERSION} --build-arg BASE_ARCH_IMAGE=${IMAGE}/gromacs_universal_base${VERSION} --build-arg JOBS=${JOBS} -f gromacs/universal/Dockerfile gromacs
+	docker push "${IMAGE}/gromacs_universal${VERSION}"
+
 gromacs/gmx-docker: gromacs/gmx-docker.in Makefile
 	sed "s/%VERSION%/${VERSION}/g; s?%IMAGE%?${IMAGE}?g" gromacs/gmx-docker.in >$@
 	chmod +x $@

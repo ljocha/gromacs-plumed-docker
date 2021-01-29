@@ -1,0 +1,150 @@
+ARG PLUMED_IMAGE
+ARG BASE_ARCH_IMAGE
+
+FROM $PLUMED_IMAGE as builder
+
+# number of make jobs during compile
+ARG JOBS=4
+
+USER root
+
+RUN mkdir -p /gromacs-build/src /gromacs-build/build
+COPY gromacs-src /gromacs-build/src
+WORKDIR /gromacs-build/build
+
+RUN g++ -O3 -mavx512f -std=c++11 \
+    -DGMX_IDENTIFY_AVX512_FMA_UNITS_STANDALONE=1 \
+    -DGMX_X86_GCC_INLINE_ASM=1 \
+    -DSIMD_AVX_512_CXX_SUPPORTED=1 \
+    -o /usr/local/bin/identifyavx512fmaunits \
+	/gromacs-build/src/src/gromacs/hardware/identifyavx512fmaunits.cpp 
+
+###############################################################################
+# Build possible mdruns
+###############################################################################
+# AVX_512
+###############################################################################
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=OFF \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=ON \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512_d \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=AVX_512 \
+  && make -j ${JOBS} \
+  && make install; done
+
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX_512_ts \
+    -DGMX_USE_RDTSCP=ON \
+    -DGMX_SIMD=AVX_512 \
+  && make -j ${JOBS} \
+  && make install; done
+
+###############################################################################
+# AVX2_256
+###############################################################################
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=OFF \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=ON \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256_d \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=AVX2_256 \
+  && make -j ${JOBS} \
+  && make install; done
+
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256 \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=AVX2_256 \
+  && make -j ${JOBS} \
+  && make install; done
+
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/AVX2_256_ts \
+    -DGMX_USE_RDTSCP=ON \
+    -DGMX_SIMD=AVX2_256 \
+  && make -j ${JOBS} \
+  && make install; done
+
+###############################################################################
+# SSE2 
+###############################################################################
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=OFF \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=ON \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \	
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/SSE2_d \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=SSE2 \
+  && make -j ${JOBS} \
+  && make install; done
+
+RUN CC=gcc CXX=g++ cmake ../src \
+    -DGMX_OPENMP=ON \
+	-DGMX_GPU=ON \
+    -DGMX_MPI=ON \
+	-DGMX_DOUBLE=OFF \
+	-DGMX_BUILD_OWN_FFTW=ON \
+	-DGMX_BUILD_MDRUN_ONLY=ON \	
+    -DGMX_DEFAULT_SUFFIX=OFF \
+    -DCMAKE_INSTALL_PREFIX=/gromacs/SSE2 \
+    -DGMX_USE_RDTSCP=OFF \
+    -DGMX_SIMD=SSE2 \
+  && make -j ${JOBS} \
+  && make install; done
+
+###############################################################################
+# Copy on top of base architecture all mdruns
+###############################################################################
+FROM $BASE_ARCH_IMAGE
+
+COPY --from=builder /usr/local/lib /usr/local/lib
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/bin/identifyavx512fmaunits /usr/local/bin
+
+# copy gromacs install
+COPY --from=builder /gromacs /gromacs
+COPY universal/mdrun-chooser.sh /opt
+
+ENV PROMPT_COMMAND="source /opt/mdrun-chooser.sh" \
+	BASH_ENV="/opt/mdrun-chooser.sh"
+ 
+RUN ldconfig
+
+WORKDIR /tmp
+
