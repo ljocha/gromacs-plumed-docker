@@ -2,21 +2,20 @@
   
 unset double
 unset rdtscp
-unset arch
 
-if [ -z $PATH_LENGTH ]; then
+if [ -z "$PATH_LENGTH" ]; then
         PATH_LENGTH=${#PATH}
         export PATH_LENGTH
 fi
 
 PATH=${PATH:0:PATH_LENGTH}
-if [ $DOUBLE = "ON" ]; then
+if [ "$DOUBLE" = "ON" ]; then
         double="_d"
 fi
-if [ $RDTSCP = "ON" ]; then
+if [ "$RDTSCP" = "ON" ]; then
         rdtscp="_ts"
 fi
-if [ ! -z $ARCH ]; then
+if [ ! -z "$ARCH" ]; then
         PATH=$PATH:/gromacs/${ARCH}${double}${rdtscp}/bin
         export PATH
         return 0
