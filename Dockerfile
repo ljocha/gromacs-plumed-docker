@@ -68,20 +68,21 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 
 FROM nvidia/cuda:11.2.1-base-ubuntu20.04
 
+RUN apt update
+RUN apt install -y mpich
+RUN apt install -y libcufft10 libmpich12 libblas3 libgomp1 
+
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/local/lib/libplumed* /usr/local/lib/
 COPY --from=builder /usr/local/lib/plumed/ /usr/local/lib/plumed/
 
-# COPY --from=builder /usr/local/lib/*fftw* /usr/local/lib/
 COPY --from=builder /gromacs /gromacs
-
-RUN apt update
-# RUN apt install -y mpich
-RUN apt install -y libcufft10 libmpich12 libblas3 libgomp1 
-# libfftw3
 
 COPY gmx-chooser.sh /gromacs
 COPY gmx /usr/local/bin
 RUN ln -s gmx /usr/local/bin/gmx_d
 RUN ln -s gmx /usr/local/bin/mdrun
 RUN ln -s gmx /usr/local/bin/mdrun_d
+
+RUN apt clean
+RUN ldconfig

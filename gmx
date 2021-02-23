@@ -1,5 +1,4 @@
-#/bin/bash
-
+#!/bin/bash
 
 if [ -z "$GMX_DOUBLE" ]; then
 	GMX_DOUBLE=OFF
