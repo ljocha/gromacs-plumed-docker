@@ -66,7 +66,7 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 
 
-FROM nvidia/cuda:11.2.1-base-ubuntu20.04
+FROM nvidia/cuda:11.2.1-runtime-ubuntu20.04
 
 RUN apt update
 RUN apt install -y mpich
