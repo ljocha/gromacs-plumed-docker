@@ -14,9 +14,7 @@ before_script:
 build-all:
   stage: build
   script:
-    - make
-  artifacts:
-    paths:
-    - gromacs/gmx-docker
+    - docker build -t $CI_REGISTRY:$CI_REGISTRY_USER/gromacs:latest
+    - docker push $CI_REGISTRY:$CI_REGISTRY_USER/gromacs:latest
   only:
     - master
