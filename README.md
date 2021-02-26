@@ -42,7 +42,7 @@ Pull and convert the image
 
 Run 
 
-	singularity run --nv --pwd /work -B $PWD:/work gromacs_GROMACS_VERSION-LJOCHA_VERSION gmx ...
+	singularity run --nv --pwd /work -B $PWD:/work gromacs_GROMACS_VERSION-LJOCHA_VERSION.sif gmx ...
 
 
 
