@@ -1,0 +1,16 @@
+#!/bin/bash
+
+if [ -z "$GMX_DOUBLE" ]; then
+	GMX_DOUBLE=OFF
+	b=$(basename $0) 
+	[ $b = gmx_d -o $b = mdrun_d ] && GMX_DOUBLE=ON
+	export GMX_DOUBLE
+fi
+
+source /gromacs/gmx-chooser.sh
+
+if [ $(basename $0 _d) = mdrun ]; then
+	exec gmx mdrun "$@"
+else
+	exec gmx "$@"
+fi
