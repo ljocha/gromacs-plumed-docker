@@ -1,4 +1,4 @@
-#! docker build -t ljocha/gromacs:2021-1 .
+#! docker build -t ljocha/gromacs:2021-dev-plumed .
 
 FROM nvidia/cuda:11.2.1-devel-ubuntu20.04 as builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
@@ -6,7 +6,7 @@ MAINTAINER Ales Krenek <ljocha@ics.muni.cz>
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Prague
 
-ARG JOBS=8
+ARG JOBS=24
 
 #ARG FFTW_VERSION=3.3.9
 #ARG FFTW_MD5=50145bb68a8510b5d77605f11cadf8dc
@@ -56,27 +56,14 @@ RUN tar -xzvf gromacs.tar.gz
 RUN cd gromacs-${GROMACS_VERSION} && plumed patch -e gromacs-${GROMACS_PATCH_VERSION} -p
 
 COPY build-gmx.sh /build
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2 -d
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2 -d
 
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX2_256 -r
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX2_256 -r -d
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX2_256 -r -d
 
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
-
-
-FROM nvidia/cuda:11.2.1-runtime-ubuntu20.04
-
-RUN apt update
-RUN apt install -y mpich
-RUN apt install -y libcufft10 libmpich12 libblas3 libgomp1 
-
-COPY --from=builder /usr/local/bin /usr/local/bin
-COPY --from=builder /usr/local/lib/libplumed* /usr/local/lib/
-COPY --from=builder /usr/local/lib/plumed/ /usr/local/lib/plumed/
-
-COPY --from=builder /gromacs /gromacs
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 
 COPY gmx-chooser.sh /gromacs
 COPY gmx /usr/local/bin
@@ -84,5 +71,4 @@ RUN ln -s gmx /usr/local/bin/gmx_d
 RUN ln -s gmx /usr/local/bin/mdrun
 RUN ln -s gmx /usr/local/bin/mdrun_d
 
-RUN apt clean
 RUN ldconfig
