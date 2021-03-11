@@ -1,5 +1,3 @@
-#! docker build -t ljocha/gromacs:2021-1 .
-
 FROM nvidia/cuda:11.2.1-devel-ubuntu20.04 as builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 

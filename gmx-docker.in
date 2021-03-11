@@ -1,0 +1,166 @@
+#!/bin/bash
+
+IMAGE=%IMAGE%
+
+GMX_DOUBLE="OFF"
+WORKDIR_CURRENT=""
+
+eval set -- $(getopt -o +pcda:rw:Rv:n:hi:m: -- "$@")
+unset MPI
+unset PODMAN
+unset GMX_ARCH
+unset GMX_RDTSCP
+unset CLEAN
+unset INPUT
+unset MULTI_INPUT
+
+while [ $1 != '--' ]; do case $1 in
+	-n) MPI="$2"; shift; shift ;;
+	-d) GMX_DOUBLE="ON"; shift ;;
+	-a) GMX_ARCH="$2"; shift; shift ;;
+	-r) GMX_RDTSCP="ON"; shift ;;
+	-c) CLEAN=y; shift ;;
+	-w) WORKDIR_CURRENT="$2"; shift; shift ;;
+	-R) GMX_RDTSCP="OFF"; shift ;;
+	-v) IMAGE="$2"; shift; shift ;;
+	-i) INPUT="$2"; shift; shift ;;
+	-m) MULTI_INPUT="$2"; shift; shift ;;
+	-p) PODMAN=y; shift ;;
+	-h) cat >&2 <<EOF
+usage: $0 options [--] gromacs_args ...
+
+options are:
+	-n		MPI processes
+	-d		double precision
+	-a arch		enforce specific CPU architecture (SSE2, AVX2_256, AVX_512)
+	-r		enforce RDTSCP (should be detected)
+	-w		select working directory relative to shared one for current enumeration
+	-R		disable RDTSCP
+	-c		cleanup -- just remove docker image 
+	-p		use podman instead of docker
+	-i		specify char input for gromacs
+	-m		specify string input for gromacs
+	-v version	use specific docker image version ($IMAGE by default)
+EOF
+	exit 1;;
+	--) shift; break ;;
+esac; done
+
+export GMX_ARCH GMX_DOUBLE GMX_RDTSCP
+ENV_FLAGS="-e CUDA_VISIBLE_DEVICES -e CUDA_DEVICE_ORDER -e GMX_ARCH -e GMX_DOUBLE -e GMX_RDTSCP"
+
+if [ -n "$PODMAN" ]; then
+	if [ -z "$SCRATCHDIR" ]; then
+		echo Warning: SCRATCHDIR not set, / may be filled up >&2
+	else
+		TMPDIR=$SCRATCHDIR
+		export TMPDIR
+	fi
+	podman="podman"
+	podman_run="$podman run --privileged --hostname ${HOSTNAME}"
+fi
+
+while [ "$1" == '--' ]; do shift; done
+
+if [ -n "$GMX_ARCH" ]; then case $GMX_ARCH in
+	SSE2) if [ "$GMX_RDTSCP" = ON ]; then
+		GMX_RDTSCP=OFF
+		echo warning: RDTSCP not supported with SSE2 >&2
+	fi;;
+	AVX2_256 | AVX_512) if [ "$GMX_RDTSCP" = OFF ]; then
+		GMX_RDTSCP=ON
+		echo warning: RDTSCP allways supported with $GMX_ARCH >&2
+	fi;;
+	*) echo warning: unknown architecture $GMX_ARCH, falling back to autodetection
+		unset GMX_ARCH;;
+esac; fi
+
+if [ -z "$WORKDIR_OUTSIDE" ]; then
+	WORKDIR_OUTSIDE=${WORK:-$PWD}
+fi
+
+unset MPIRUN
+if [ -n "$MPI" ]; then
+	MPIRUN="mpirun -np $MPI"
+fi
+
+VOLUME=${WORKDIR_OUTSIDE}${WORKDIR_CURRENT}:/tmp
+
+gmx_input=""
+if [ -n "$INPUT" ]; then
+	for (( i=0; i<${#INPUT}; i++ )); do
+		gmx_input="$gmx_input echo ${INPUT:$i:1}"
+		if [ $((i+1)) != ${#INPUT} ]; then
+			gmx_input="$gmx_input; sleep 1; "
+		fi
+	done
+fi
+
+if [ -n "$MULTI_INPUT" ]; then
+	start_index=0
+	if [ -z "$PODMAN" ]; then
+		start_index=1
+	fi
+	gmx_input_tmp=''
+	for (( i=$start_index; i<${#MULTI_INPUT}; i++ )); do
+		if [ "${MULTI_INPUT:$i:1}" != "_" ] && [ "${MULTI_INPUT:$i:1}" != '"' ]; then
+			gmx_input_tmp="$gmx_input_tmp${MULTI_INPUT:$i:1}"
+			if [ $((i+1)) != ${#MULTI_INPUT} ]; then
+				continue
+			fi
+		fi
+                gmx_input="$gmx_input echo '$gmx_input_tmp'; sleep 1; "
+		gmx_input_tmp=""
+        done
+fi
+
+if [ -n "$PODMAN" ]; then
+	cat - >/tmp/gmx-podman.$$ <<EOF
+#!/bin/bash
+
+cp /host/usr/lib/nvidia/current/nvidia-smi /usr/bin
+cp -rP /host/usr/lib/x86_64-linux-gnu/nvidia/current/* /usr/lib/x86_64-linux-gnu
+cp -rP /host/usr/lib/mesa-diverted/x86_64-linux-gnu/* /usr/lib/x86_64-linux-gnu
+EOF
+	if [ "$1" == 'driver' ]; then
+		echo -n $MPIRUN plumed >>/tmp/gmx-podman.$$
+	elif [ -n "$gmx_input" ]; then
+		echo -n "($gmx_input) | $MPIRUN gmx " >>/tmp/gmx-podman.$$
+	else
+		echo -n "$MPIRUN gmx " >>/tmp/gmx-podman.$$
+	fi
+	for a in "$@"; do
+		echo -n " "\"$a\" >>/tmp/gmx-podman.$$
+	done
+	echo >>/tmp/gmx-podman.$$
+
+	chmod +x /tmp/gmx-podman.$$
+
+	$podman_run $ENV_FLAGS -v /:/host -v $VOLUME -ti  $IMAGE /host/tmp/gmx-podman.$$
+	rm /tmp/gmx-podman.$$
+
+else
+# XXX: always grab all gpus
+	if [ $(docker -v | sed 's/Docker version //; s/\..*$//;') -ge 19 ]; then
+		gpu="--gpus all --device /dev/nvidiactl:/dev/nvidiactl --device /dev/nvidia-uvm:/dev/nvidia-uvm"
+		for d in $(ls /dev | egrep -i 'nvidia[0..9]+'); do
+			gpu="$gpu --device /dev/$d:/dev/$d"
+		done
+	fi
+
+	docker_run="docker run $ENV_FLAGS $gpu -u $(id -u):$(stat -c %g /var/run/docker.sock) -i -v $VOLUME ${IMAGE} $MPIRUN"
+	
+	if [ -n "$CLEAN" ]; then
+		docker rmi --force ${IMAGE}
+	else
+		if [ "$1" == 'driver' ]; then
+		    $docker_run plumed "$@"
+		elif [ -n "$gmx_input" ]; then
+			cmd="($gmx_input) | $docker_run gmx $@"
+			sh -c "$cmd"
+		else
+			$docker_run gmx "$@"
+		fi
+
+	fi
+fi
