@@ -1,0 +1,71 @@
+#!/bin/bash
+
+
+#XXX
+ns=krenek-ns
+IMAGE=ljocha/gromacs:2021-1
+
+yaml=/tmp/gmx-$$.yaml
+
+CPU=1
+GPU=0
+
+if [ "$1" = mdrun -o $(basename $0) = mdrun ]; then
+	GPU=1
+	thisone=n
+	for a in "$@"; do
+		if [ $thisone = y ]; then
+			CPU=$a
+			thisone=n
+		fi
+		[ $a = -ntomp ] && thisone=y
+	done
+fi
+
+MEM=$((4 * $CPU))Gi
+
+cat - >$yaml <<EOF
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: gmx
+spec:
+  ttlSecondsAfterFinished: 20
+  template:
+    spec:
+      securityContext:
+        runAsUser: 1001
+        runAsGroup: 1002
+        fsGroup: 1003
+      containers:
+      - name: gmx
+        image: $IMAGE
+        resources:
+          requests:
+            cpu: $CPU
+            memory: $MEM
+          limits:
+            nvidia.com/gpu: $GPU
+        volumeMounts:
+          - mountPath: /work
+            name: chicken-work-volume
+#        command: [ "gmx" ]
+        command: [ "nvidia-smi" ]
+        args:
+EOF
+
+for a in "$@"; do
+	echo "          - \"$a\"" >>$yaml
+done
+
+cat - >>$yaml <<EOF
+      restartPolicy: Never
+      volumes:
+        - name: chicken-work-volume
+          persistentVolumeClaim:
+            claimName: test-volume
+EOF
+
+
+kubectl apply -n $ns -f $yaml
+rm $yaml
