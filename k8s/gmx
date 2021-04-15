@@ -9,19 +9,27 @@ IMAGE=ljocha/gromacs:2021-1
 name=$(LC_CTYPE=C tr -cd '0-9a-z' </dev/urandom | head -c 9)
 yaml=/tmp/gmx-$name.yaml
 
+set -- $(getopt n: "$@")
+
+while [ "$1" != -- ]; do case "$1" in
+	-n) mpi=$2; shift;;
+	esac
+	shift
+done
+shift
+
 CPU=1
 GPU=0
+mpi=1
 
 if [ "$1" = mdrun -o $(basename $0) = mdrun ]; then
 	GPU=1
-	thisone=n
+	omp=1
 	for a in "$@"; do
-		if [ $thisone = y ]; then
-			CPU=$a
-			thisone=n
-		fi
-		[ $a = -ntomp ] && thisone=y
+		[ $omp = y ]; omp=$a
+		[ $a = -ntomp ] && omp=y
 	done
+	CPU=$(($omp * $mpi))
 fi
 
 MEM=$((4 * $CPU))Gi
@@ -50,10 +58,13 @@ spec:
             nvidia.com/gpu: $GPU
         volumeMounts:
           - mountPath: /work
-            name: chicken-work-volume
-        command: [ "gmx" ]
+            name: work-volume
+        command: [ "mpirun" ]
 #        command: [ "nvidia-smi" ]
         args:
+          - "-np"
+          - "$mpi"
+          - "gmx"
 EOF
 
 for a in "$@"; do
@@ -63,11 +74,12 @@ done
 cat - >>$yaml <<EOF
       restartPolicy: Never
       volumes:
-        - name: chicken-work-volume
+        - name: work-volume
           persistentVolumeClaim:
-            claimName: test-volume
+            claimName: ${WORK_VOLUME:=test-volume}
 EOF
 
+# cat $yaml
 
 kubectl apply $ns -f $yaml
 # XXX
