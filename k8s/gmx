@@ -2,10 +2,12 @@
 
 
 #XXX
-ns=krenek-ns
+[ -n "$K8S_NS" ] && ns="-n $K8S_NS"
+
 IMAGE=ljocha/gromacs:2021-1
 
-yaml=/tmp/gmx-$$.yaml
+name=$(LC_CTYPE=C tr -cd '0-9a-z' </dev/urandom | head -c 9)
+yaml=/tmp/gmx-$name.yaml
 
 CPU=1
 GPU=0
@@ -28,7 +30,7 @@ cat - >$yaml <<EOF
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: gmx
+  name: gmx-$name
 spec:
   ttlSecondsAfterFinished: 20
   template:
@@ -49,8 +51,8 @@ spec:
         volumeMounts:
           - mountPath: /work
             name: chicken-work-volume
-#        command: [ "gmx" ]
-        command: [ "nvidia-smi" ]
+        command: [ "gmx" ]
+#        command: [ "nvidia-smi" ]
         args:
 EOF
 
@@ -67,5 +69,10 @@ cat - >>$yaml <<EOF
 EOF
 
 
-kubectl apply -n $ns -f $yaml
+kubectl apply $ns -f $yaml
+# XXX
+while kubectl logs job.batch/gmx-$name $ns 2>&1 >/dev/null | grep 'waiting to start'; do sleep 2; done
+kubectl logs job.batch/gmx-$name --follow $ns
+
+kubectl delete job.batch/gmx-$name $ns
 rm $yaml
