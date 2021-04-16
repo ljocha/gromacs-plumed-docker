@@ -9,7 +9,7 @@ IMAGE=ljocha/gromacs:2021-1
 name=$(LC_CTYPE=C tr -cd '0-9a-z' </dev/urandom | head -c 9)
 yaml=/tmp/gmx-$name.yaml
 
-set -- $(getopt n: "$@")
+set -- $(getopt -o +n: -- "$@")
 
 while [ "$1" != -- ]; do case "$1" in
 	-n) mpi=$2; shift;;
@@ -79,7 +79,7 @@ cat - >>$yaml <<EOF
             claimName: ${WORK_VOLUME:=test-volume}
 EOF
 
-# cat $yaml
+cat $yaml
 
 kubectl apply $ns -f $yaml
 # XXX
