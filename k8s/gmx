@@ -4,19 +4,19 @@
 #XXX
 [ -n "$K8S_NS" ] && ns="-n $K8S_NS"
 
-IMAGE=ljocha/gromacs:2021-1
+IMAGE=ljocha/gromacs:2021-1fann
 
 name=$(LC_CTYPE=C tr -cd '0-9a-z' </dev/urandom | head -c 9)
 yaml=/tmp/gmx-$name.yaml
 
-set -- $(getopt n: "$@")
+#set -- $(getopt -o +n: -- "$@")
 
-while [ "$1" != -- ]; do case "$1" in
-	-n) mpi=$2; shift;;
+#while [ "$1" != -- ]; do case "$1" in
+while getopts n: opt; do case "$o" in
+	-n) mpi=$OPTARG;;
 	esac
-	shift
 done
-shift
+shift $(($OPTIND - 1))
 
 CPU=1
 GPU=0
@@ -59,8 +59,8 @@ spec:
         volumeMounts:
           - mountPath: /work
             name: work-volume
+        workingDir: /work/${WORKDIR_RELATIVE}
         command: [ "mpirun" ]
-#        command: [ "nvidia-smi" ]
         args:
           - "-np"
           - "$mpi"
