@@ -79,7 +79,7 @@ cat - >>$yaml <<EOF
             claimName: ${WORK_VOLUME:=test-volume}
 EOF
 
-# cat $yaml
+cat $yaml
 
 kubectl apply $ns -f $yaml
 # XXX
