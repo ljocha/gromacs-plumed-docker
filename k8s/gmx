@@ -46,7 +46,7 @@ spec:
       securityContext:
         runAsUser: 1001
         runAsGroup: 1002
-        fsGroup: 1003
+#        fsGroup: 1003
       containers:
       - name: gmx
         image: $IMAGE
@@ -79,7 +79,7 @@ cat - >>$yaml <<EOF
             claimName: ${WORK_VOLUME:=test-volume}
 EOF
 
-cat $yaml
+# cat $yaml
 
 kubectl apply $ns -f $yaml
 # XXX
