@@ -46,7 +46,8 @@ spec:
       securityContext:
         runAsUser: 1001
         runAsGroup: 1002
-#        fsGroup: 1003
+        fsGroup: 1002
+        fsGroupChangePolicy: "OnRootMismatch"
       containers:
       - name: gmx
         image: $IMAGE
