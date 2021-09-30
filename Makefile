@@ -1,5 +1,5 @@
 
-VERSION=2021-1
+VERSION=2021-2
 BASE=ljocha/gromacs
 IMAGE=${BASE}:${VERSION}
 

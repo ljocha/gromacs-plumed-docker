@@ -37,7 +37,7 @@ ARG PLUMED_VERSION=v2.7
 
 RUN apt-get install -y git
 
-RUN git clone https://github.com/plumed/plumed2 --branch ${PLUMED_VERSION} --single-branch
+RUN git clone https://gitlab.fi.muni.cz/xkurecka/plumed2-fann.git plumed2 --branch ${PLUMED_VERSION} --single-branch
 RUN cd plumed2 && ./configure --enable-modules=all && make -j ${JOBS} && make install 
 RUN ldconfig
 
