@@ -13,4 +13,4 @@ wrapper:
 	chmod +x gmx-docker
 
 push:
-	dpcker push ${IMAGE}
+	docker push ${IMAGE}
