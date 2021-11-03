@@ -39,7 +39,10 @@ RUN apt-get install -y git
 
 # interim, before our changes are pushed to mainstream
 ENV GIT_SSL_NO_VERIFY=true
-RUN git clone https://gitlab.fi.muni.cz/xkurecka/plumed2-fann.git plumed2 --branch ${PLUMED_VERSION} --single-branch
+RUN git clone https://gitlab.fi.muni.cz/xkurecka/plumed-alphafold.git plumed2
+# RUN git clone https://gitlab.fi.muni.cz/xkurecka/plumed2-fann.git plumed2 --branch ${PLUMED_VERSION} --single-branch
+RUN cd plumed2 && git config user.email nobody@here && git config user.name "Docker build"
+RUN cd plumed2 && git branch ${PLUMED_VERSION} && git checkout ${PLUMED_VERSION} && git pull https://gitlab.fi.muni.cz/xkurecka/plumed2-fann.git ${PLUMED_VERSION}
 
 RUN cd plumed2 && ./configure --enable-modules=all && make -j ${JOBS} && make install 
 RUN ldconfig
