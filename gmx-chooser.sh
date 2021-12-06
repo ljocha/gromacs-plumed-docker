@@ -36,7 +36,7 @@ if [ ! -z $GMX_ARCH ]; then
         return 0
 fi
 
-if echo $FLAGS | grep " avx512f " > /dev/null && test -d /gromacs/bin.AVX_512 && echo $(/gromacs/AVX_512${double}${rdtscp}/bin/identifyavx512fmaunits) | grep "2" > /dev/null; then
+if echo $FLAGS | grep " avx512f " > /dev/null && test -d /gromacs/AVX_512${double}${rdtscp} && echo $(/gromacs/AVX_512${double}${rdtscp}/bin/identifyavx512fmaunits) | grep "2" > /dev/null; then
         PATH=/gromacs/AVX_512${double}${rdtscp}/bin:$PATH
 elif echo $FLAGS | grep " avx2 " > /dev/null; then
         PATH=/gromacs/AVX2_256${double}${rdtscp}/bin:$PATH
