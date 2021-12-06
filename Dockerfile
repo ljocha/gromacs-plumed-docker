@@ -33,13 +33,13 @@ WORKDIR /build
 #  && make -j ${JOBS} \
 #  && make install
 
-ARG PLUMED_VERSION=v2.7
+ARG PLUMED_VERSION=uvt_extensions
 
 RUN apt-get install -y git
 
 # interim, before our changes are pushed to mainstream
 ENV GIT_SSL_NO_VERIFY=true
-RUN git clone https://gitlab.fi.muni.cz/xkurecka/plumed2-fann.git plumed2 --branch ${PLUMED_VERSION} --single-branch
+RUN git clone https://github.com/kurecka/plumed2.git plumed2 --branch ${PLUMED_VERSION} --single-branch
 
 RUN cd plumed2 && ./configure --enable-modules=all && make -j ${JOBS} && make install 
 RUN ldconfig
