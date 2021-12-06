@@ -1,0 +1,13 @@
+diff --git a/src/alphafold/AlphaFold.cpp b/src/alphafold/AlphaFold.cpp
+index 6aaa9c85e..0469d59dc 100644
+--- a/src/alphafold/AlphaFold.cpp
++++ b/src/alphafold/AlphaFold.cpp
+@@ -136,7 +136,7 @@ std::pair<double, double> AlphaFold::interpolate(const std::vector<double>& logi
+   d_sum *= 2 * lambda;
+   d_weighted_sum *= 2 * lambda;
+ 
+-  std::cout << sum << " " << weighted_sum << " " << d_sum << " " << d_weighted_sum << std::endl;
++//  std::cout << sum << " " << weighted_sum << " " << d_sum << " " << d_weighted_sum << std::endl;
+ 
+   return { weighted_sum / sum, (d_weighted_sum * sum - weighted_sum * d_sum) / (sum * sum) };
+ }
