@@ -1,9 +1,9 @@
 
-VERSION=2021-2
-BASE=ljocha/gromacs
+VERSION=2022-libtorch-1.12.1
+BASE=kurecka/gromacs
 IMAGE=${BASE}:${VERSION}
 
-all: build wrapper push
+all: build #wrapper push
 
 build:
 	docker build -t ${IMAGE} .
