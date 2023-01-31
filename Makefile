@@ -1,9 +1,9 @@
 
-VERSION=2021-3.3
 BASE?=ljocha/gromacs
+VERSION=2023-1
 IMAGE=${BASE}:${VERSION}
 
-all: build wrapper push
+all: build #wrapper push
 
 build:
 	docker build -t ${IMAGE} .
