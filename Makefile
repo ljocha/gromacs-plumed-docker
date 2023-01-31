@@ -1,6 +1,6 @@
 
 VERSION=2021-3.3
-BASE=ljocha/gromacs
+BASE?=ljocha/gromacs
 IMAGE=${BASE}:${VERSION}
 
 all: build wrapper push

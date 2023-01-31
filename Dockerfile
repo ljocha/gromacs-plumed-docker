@@ -35,6 +35,7 @@ WORKDIR /build
 
 ARG PLUMED_VERSION=uvt_extensions
 
+RUN apt-get update
 RUN apt-get install -y git
 
 # interim, before our changes are pushed to mainstream
