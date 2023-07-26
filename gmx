@@ -22,10 +22,11 @@ function copy () {
 	    -deffnm*)
 	      shift
 	      cp $1* $SCRATCHDIR
+	      shift
 	      ;;
 	    *)
 	      if [ -f "$1" ]; then
-		      cp $1 $SCRATCHDIR
+		      cp "$1" $SCRATCHDIR
 	      fi
 	      shift
 	      ;;
@@ -38,22 +39,35 @@ function sync () {
 	rsync -aq $SCRATCHDIR/* $WORKDIR 2>/dev/null
 }
 
-# sync one last time after completion
-trap "[[ ! -z '$SCRATCHDIR' ]] && sync && kill -- -$$" EXIT
+function stop_sync() {
+	if [ -n "$sync_pid" ]; then
+		kill $sync_pid
+		wait
+		sync
+	fi
+}
 
+# sync one last time after completion
+trap stop_sync EXIT
+
+
+if [ ! -z "$SCRATCHDIR" ];
+then
+	touch "$SCRATCHDIR"/x || exit 1
+	rm -f "$SCRATCHDIR"/x
+	copy "$@"
+	cd $SCRATCHDIR || exit 1
+	while true
+	do
+		sleep 60
+		sync
+	done &
+	sync_pid=$!
+fi
 
 if [ $(basename $0 _d) = mdrun ]; then
 	gmx mdrun "$@"
 else
-	if [ ! -z "$SCRATCHDIR" ];
-	then
-        		copy "$@"
-			cd $SCRATCHDIR
-			while true
-			do
-				sleep 60
-				sync
-			done &
-	fi
 	gmx "$@"
-fi
+fi 
+

@@ -1,6 +1,6 @@
 
 BASE?=ljocha/gromacs
-VERSION=2023-1
+VERSION=2023-2
 IMAGE=${BASE}:${VERSION}
 
 all: build #wrapper push
