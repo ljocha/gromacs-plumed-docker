@@ -1,4 +1,4 @@
-FROM nvidia/cuda:11.2.1-devel-ubuntu20.04 as builder
+FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -89,6 +89,7 @@ FROM nvidia/cuda:11.2.1-runtime-ubuntu20.04
 RUN apt update
 RUN apt install -y mpich
 RUN apt install -y libcufft10 libmpich12 libblas3 libgomp1 
+RUN apt install -y rsync
 
 COPY --from=builder /build/libtorch /build/libtorch
 ENV LD_LIBRARY_PATH=/build/libtorch/lib:$LD_LIBRARY_PATH
