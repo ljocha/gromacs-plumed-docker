@@ -13,8 +13,8 @@ source /gromacs/gmx-chooser.sh
 
 # copy necessary files from PVC to scratchdir
 function copy () {
-	# copy HILLS and COLVAR files if present
-	cp HILLS COLVAR $SCRATCHDIR 2>/dev/null
+	# copy mdrun needed files if present
+	cp model.pt HILLS COLVAR $SCRATCHDIR 2>/dev/null
 
 	# copy everything else
 	while test $# -gt 0; do
