@@ -1,69 +1,79 @@
-# This section is only required for deploying Redis on Kubernetes for the purpose of enabling Ray 
-# to write GCS metadata to an external Redis for fault tolerance. If you have already deployed Redis 
-# on Kubernetes, this section can be removed.
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: redis-config
-  labels:
-    app: redis
-data:
-  redis.conf: |-
-    dir /data
-    port 6379
-    bind 0.0.0.0
-    appendonly yes
-    protected-mode no
-    pidfile /data/redis-6379.pid
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: redis
-  labels:
-    app: redis
-spec:
-  type: ClusterIP
-  ports:
-    - name: redis
-      port: 6379
-  selector:
-    app: redis
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: redis
-  labels:
-    app: redis
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: redis
-  template:
-    metadata:
-      labels:
-        app: redis
-    spec:
-      containers:
-        - name: redis
-          image: redis:5.0.8
-          command:
-            - "sh"
-            - "-c"
-            - "redis-server /usr/local/etc/redis/redis.conf"
-          ports:
-            - containerPort: 6379
-          volumeMounts:
-            - name: config
-              mountPath: /usr/local/etc/redis/redis.conf
-              subPath: redis.conf
-      volumes:
-        - name: config
-          configMap:
-            name: redis-config
----
+#  # This section is only required for deploying Redis on Kubernetes for the purpose of enabling Ray 
+#  # to write GCS metadata to an external Redis for fault tolerance. If you have already deployed Redis 
+#  # on Kubernetes, this section can be removed.
+#  kind: ConfigMap
+#  apiVersion: v1
+#  metadata:
+#    name: redis-config
+#    labels:
+#      app: redis
+#  data:
+#    redis.conf: |-
+#      dir /var/tmp
+#      port 6379
+#      bind 0.0.0.0
+#      appendonly yes
+#      protected-mode no
+#      pidfile /var/tmp/redis-6379.pid
+#  ---
+#  apiVersion: v1
+#  kind: Service
+#  metadata:
+#    name: redis
+#    labels:
+#      app: redis
+#  spec:
+#    type: ClusterIP
+#    ports:
+#      - name: redis
+#        port: 6379
+#    selector:
+#      app: redis
+#  ---
+#  apiVersion: apps/v1
+#  kind: Deployment
+#  metadata:
+#    name: redis
+#    labels:
+#      app: redis
+#  spec:
+#    replicas: 1
+#    selector:
+#      matchLabels:
+#        app: redis
+#    template:
+#      metadata:
+#        labels:
+#          app: redis
+#      spec:
+#        containers:
+#          - name: redis
+#            image: redis:5.0.8
+#            command:
+#              - "sh"
+#              - "-c"
+#              - "redis-server /usr/local/etc/redis/redis.conf"
+#            ports:
+#              - containerPort: 6379
+#            volumeMounts:
+#              - name: config
+#                mountPath: /usr/local/etc/redis/redis.conf
+#                subPath: redis.conf
+#            securityContext:
+#              runAsNonRoot: true
+#              runAsUser: 1000
+#              runAsGroup: 1000
+#              capabilities:
+#                drop:
+#                - ALL
+#              allowPrivilegeEscalation: false
+#              seccompProfile:
+#                type: RuntimeDefault
+#        volumes:
+#          - name: config
+#            configMap:
+#              name: redis-config
+#  ---
 # Ray head node service, allowing worker pods to discover the head node to perform the bidirectional communication.
 # More contexts can be found at [the Ports configurations doc](https://docs.ray.io/en/latest/ray-core/configure.html#ports-configurations).
 apiVersion: v1
@@ -130,6 +140,7 @@ spec:
           command: [ "/bin/bash", "-c", "--" ]
           # if there is no password for Redis, set --redis-password=''
           args:
+#             - "sleep 365d"
             - "ray start --head --port=6380 --num-cpus=$MY_CPU_REQUEST --dashboard-host=0.0.0.0 --object-manager-port=8076 --node-manager-port=8077 --dashboard-agent-grpc-port=8078 --dashboard-agent-listen-port=52365 --redis-password='' --block"
           ports:
             - containerPort: 6380 # GCS server
@@ -143,8 +154,9 @@ spec:
               name: dshm
           env:
             # RAY_REDIS_ADDRESS lets ray use external Redis for fault tolerance
-            - name: RAY_REDIS_ADDRESS
-              value: redis:6379 # ip address for the external Redis, which is "redis:6379" in this example
+#ljocha
+#            - name: RAY_REDIS_ADDRESS
+#              value: redis:6379 # ip address for the external Redis, which is "redis:6379" in this example
             # This is used in the ray start command so that Ray can spawn the
             # correct number of processes. Omitting this may lead to degraded
             # performance.
@@ -152,6 +164,14 @@ spec:
               valueFrom:
                 resourceFieldRef:
                   resource: requests.cpu
+          securityContext:
+            capabilities:
+              drop:
+              - ALL
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
           resources:
             limits:
               cpu: "1"
@@ -230,3 +250,12 @@ spec:
           requests:
             cpu: "500m"
             memory: "1G"
+        securityContext:
+          capabilities:
+            drop:
+            - ALL
+          allowPrivilegeEscalation: false
+          runAsNonRoot: true
+          seccompProfile:
+            type: RuntimeDefault
+  
