@@ -14,6 +14,9 @@ Hellow world job
 
     ray job submit --address http://localhost:8265 -- python -c "import ray; ray.init(); print(ray.cluster_resources())"
 
+Tune job
+
+    ray job submit --working-dir . --address http://localhost:8265 -- python3 tune.py 
 
 
 
