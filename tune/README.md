@@ -1,7 +1,12 @@
 Based on https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html
 
+Build docker image
+
+    docker build -t ljocha/gromacs:2023-2-ray .
+    docker push ljocha/gromacs:2023-2-ray
+
     pip3 install 'ray[default]'
-    kubectl apply -f network.yaml
+    # no! kubectl apply -f network.yaml
     kubectl apply -f static-cluster.yaml
 
 In another shell (keep it open)
