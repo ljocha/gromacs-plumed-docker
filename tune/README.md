@@ -25,6 +25,9 @@ Set NAMESPACE properly and run:
 
     kubectl -n $NAMESPACE apply -f static-cluster.yaml
 
+Eventually, if the default K8s network policy is closed, adjust it according to the
+[tutorial](https://docs.ray.io/en/latest/cluster/kubernetes/user-guides/static-ray-cluster-without-kuberay.html).
+
 Wait until the head and worker node pods go up, images are huge, downloading them takes a while.
 
 Set up port forwarding in another shell (keep it open). Unauthenticated, relying on localhost to be safe!
@@ -38,7 +41,7 @@ Hellow world job to check everything is up.
 
     ray job submit --address http://localhost:8265 -- python -c "import ray; ray.init(); print(ray.cluster_resources())"
 
-### Setup tuning experiment
+### Setup and tuning experiment
 
 To do anything useful, replace sample Gromacs inputs in this directory with real ones. The experiment expects:
 - npt.gro -- simulated system description
@@ -52,3 +55,9 @@ Run the experiment finally
     ray job submit --working-dir . --address http://localhost:8265 -- python3 tune.py 
 
 The evaluated metric is "nanoseconds per day" as reported in Gromacs log. It's quite normal that some setups fail, smaller simulated systems may not be decomposable to higher number of domains (MPI procersses).
+
+### Cleanup
+
+Release allocated resources of the static cluster:
+
+    kubectl -n $NAMESPACE delete -f static-cluster.yaml
