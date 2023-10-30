@@ -52,8 +52,3 @@ Run the experiment finally
     ray job submit --working-dir . --address http://localhost:8265 -- python3 tune.py 
 
 The evaluated metric is "nanoseconds per day" as reported in Gromacs log. It's quite normal that some setups fail, smaller simulated systems may not be decomposable to higher number of domains (MPI procersses).
-
-
-
-
-
