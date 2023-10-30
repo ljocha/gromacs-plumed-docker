@@ -43,10 +43,10 @@ def tune_func(config):
 		with open(f,"wb") as w:
 			w.write(r['bytes'])
 
-	if os.system(f"gmx convert-tpr -s md.tpr -o md-new.tpr -nsteps {nsteps} && mv md-new.tpr md.tpr") & 0xf0:
+	if os.system(f"gmx convert-tpr -s md.tpr -o md-new.tpr -nsteps {nsteps} && mv md-new.tpr md.tpr") & 0xff00:
 		return None
 
-	if os.system(f"mpirun -np {config['ntmpi']} gmx mdrun -pin on -ntomp {config['ntomp']} -deffnm md") & 0xf0:
+	if os.system(f"mpirun -np {config['ntmpi']} gmx mdrun -pin on -ntomp {config['ntomp']} -deffnm md") & 0xff00:
 		return None
 
 	nsday = None
