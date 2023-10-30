@@ -6,7 +6,26 @@ import numpy as np
 import os
 import re
 
-# 100 ps
+# tuning space, parameters to sweep
+
+space = {
+	'ntmpi' : tune.grid_search([1,2]),	# grid_search is exhaustive, replace with choice() for sampling
+  'ntomp' : tune.grid_search([1,2,4]),
+}
+
+# how many tuning trials (i.e. different parameters configurations)
+# no reason for more than size of a small tuning space, reasonable number for bigger ones
+# (one trial takes up to few minutes)
+
+# however, whole grid_search above counts for 1
+
+ntrials=1
+
+
+# part of GPU a single trial uses (1 is safe, sharing GPUs feasible for smaller simulations which don't saturate whole GPU)
+gpu_fraction=.5
+
+# usually a` 2 fs, i.e. 50k steps ~ 100 ns; good for small proteins (20 resudua)
 nsteps=50000
 
 ray_init()
@@ -38,26 +57,17 @@ def tune_func(config):
 
 	return {'nsday': nsday}
 
-space = {
-	'ntmpi' : tune.choice([1,2,4]),
-  'ntomp' : tune.choice([1,2]),
-}
-
-def bonz(x):
-	print(x)
-	return { 'cpu': x.ntmpi * x.ntomp }
 
 tuner = tune.Tuner(
 	tune.with_resources(
 		tune_func,
-#		resources=bonz
-		resources=lambda x: { 'cpu': x['ntmpi'] * x['ntomp'], 'gpu': 0.5 }
+		resources=lambda x: { 'cpu': x['ntmpi'] * x['ntomp'], 'gpu': gpu_fraction }
   ),
 	param_space=space,
   tune_config = tune.TuneConfig(
-		num_samples=4
+		num_samples=ntrials
   ),
 )
 
 results = tuner.fit()
-print(results.get_best_result(metric='nsday',mode='min'))
+print(results.get_best_result(metric='nsday',mode='max'))
