@@ -1,6 +1,6 @@
-FROM ljocha/gromacs:2023-2 as gmx
+FROM cerit.io/ljocha/gromacs:2023-2 as gmx
 
-FROM rayproject/ray:2.5.0-gpu
+FROM cerit.io/ljocha/ray:2.7.1-gpu
 
 USER root
 COPY --from=gmx /gromacs /gromacs
