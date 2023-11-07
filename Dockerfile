@@ -34,27 +34,27 @@ WORKDIR /build
 #  && make -j ${JOBS} \
 #  && make install
 
-ARG PLUMED_VERSION=uvt_extensions
+ARG PLUMED_VERSION=afed
 
 RUN apt-get update
 RUN apt-get install -y git
 
 # interim, before our changes are pushed to mainstream
 ENV GIT_SSL_NO_VERIFY=true
-RUN git clone https://github.com/kurecka/plumed2.git plumed2 --branch ${PLUMED_VERSION} --single-branch
+RUN git clone https://github.com/ljocha/plumed2.git plumed2 --branch ${PLUMED_VERSION} --single-branch
 
 RUN cd /build && \
     curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
     unzip torch.zip && \
     rm torch.zip
 
-ENV LIBTORCH=/build/libtorch
-ENV CPATH=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${LIBTORCH}/include/torch:$CPATH
-ENV INCLUDE=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${LIBTORCH}/include/torch:$INCLUDE
-ENV LIBRARY_PATH=${LIBTORCH}/lib:$LIBRARY_PATH
-ENV LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
+#ENV LIBTORCH=/build/libtorch
+#ENV CPATH=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${LIBTORCH}/include/torch:$CPATH
+#ENV INCLUDE=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${LIBTORCH}/include/torch:$INCLUDE
+#ENV LIBRARY_PATH=${LIBTORCH}/lib:$LIBRARY_PATH
+#ENV LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 
-RUN cd plumed2 && ./configure --enable-libtorch --enable-modules=all --enable-debug && make -j ${JOBS} && make install 
+RUN cd plumed2 && ./configure --enable-modules=afed --enable-modules=afed --enable-debug && make -j ${JOBS} && make install 
 RUN ldconfig
 
 RUN apt update
@@ -81,8 +81,8 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 
 
-RUN apt-get install -y python3 python3-pip
-RUN pip3 install torch --extra-index-url https://download.pytorch.org/whl/cpu
+#RUN apt-get install -y python3 python3-pip
+#RUN pip3 install torch --extra-index-url https://download.pytorch.org/whl/cpu
 
 FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
 

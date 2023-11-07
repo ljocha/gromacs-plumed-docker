@@ -1,6 +1,6 @@
 
-BASE?=ljocha/gromacs
-VERSION=2023-2
+BASE?=cerit.io/ljocha/gromacs
+VERSION=2023-afed-1
 IMAGE=${BASE}:${VERSION}
 
 all: build #wrapper push
