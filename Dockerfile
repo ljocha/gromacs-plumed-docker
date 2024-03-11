@@ -1,4 +1,5 @@
-FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
+#FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
+FROM nvidia/cuda:12.3.1-devel-ubuntu22.04 as builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -40,9 +41,11 @@ RUN apt-get update
 RUN apt-get install -y git
 
 # interim, before our changes are pushed to mainstream
-ENV GIT_SSL_NO_VERIFY=true
-RUN git clone https://github.com/kurecka/plumed2.git plumed2 --branch ${PLUMED_VERSION} --single-branch
+# ENV GIT_SSL_NO_VERIFY=true
+RUN git  clone https://github.com/ljocha/plumed2.git plumed2 
+RUN cd plumed2 && git config user.name builder && git config user.email iam@some.where && git checkout v2.9 && git merge origin/afed && git merge origin/pytorch_model_cv
 
+# comment out, moved down, wrong with debug-
 RUN cd /build && \
     curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
     unzip torch.zip && \
@@ -54,14 +57,14 @@ ENV INCLUDE=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${L
 ENV LIBRARY_PATH=${LIBTORCH}/lib:$LIBRARY_PATH
 ENV LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 
-RUN cd plumed2 && ./configure --enable-libtorch --enable-modules=all --enable-debug && make -j ${JOBS} && make install 
+RUN cd plumed2 && ./configure --enable-libtorch --enable-modules=all && make -j ${JOBS} && make install 
 RUN ldconfig
 
 RUN apt update
 RUN apt install -y python3
 
-ARG GROMACS_VERSION=2021
-ARG GROMACS_MD5=176f7decc09b23d79a495107aaedb426
+ARG GROMACS_VERSION=2023.2
+ARG GROMACS_MD5=fb85104d9cd1f753fde761bcbf842566
 ARG GROMACS_PATCH_VERSION=${GROMACS_VERSION}
 
 RUN curl -o gromacs.tar.gz https://ftp.gromacs.org/gromacs/gromacs-${GROMACS_VERSION}.tar.gz
@@ -84,7 +87,13 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 RUN apt-get install -y python3 python3-pip
 RUN pip3 install torch --extra-index-url https://download.pytorch.org/whl/cpu
 
-FROM nvidia/cuda:11.0.3-runtime-ubuntu20.04
+RUN cd /build && \
+    curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
+    unzip torch.zip && \
+    rm torch.zip
+
+
+FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04 
 
 RUN apt update
 RUN apt install -y mpich
