@@ -1,5 +1,5 @@
 #FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
-FROM nvidia/cuda:12.3.1-devel-ubuntu22.04 as builder
+FROM nvidia/cuda:12.6.2-devel-ubuntu24.04 as builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -42,8 +42,8 @@ RUN apt-get install -y git
 
 # interim, before our changes are pushed to mainstream
 # ENV GIT_SSL_NO_VERIFY=true
-RUN git  clone https://github.com/ljocha/plumed2.git plumed2 
-RUN cd plumed2 && git config user.name builder && git config user.email iam@some.where && git checkout v2.9 && git merge origin/afed && git merge origin/pytorch_model_cv
+RUN git clone https://github.com/ljocha/plumed2.git plumed2 
+RUN cd plumed2 && git config user.name builder && git config user.email iam@some.where && git checkout v2.10 && git merge origin/afed && git merge origin/pytorch_model_cv
 
 # comment out, moved down, wrong with debug-
 RUN cd /build && \
@@ -63,8 +63,8 @@ RUN ldconfig
 RUN apt update
 RUN apt install -y python3
 
-ARG GROMACS_VERSION=2023.2
-ARG GROMACS_MD5=fb85104d9cd1f753fde761bcbf842566
+ARG GROMACS_VERSION=2024.3
+ARG GROMACS_MD5=2eb4cd478cc5178fc9f67d66fcf48ed6
 ARG GROMACS_PATCH_VERSION=${GROMACS_VERSION}
 
 RUN curl -o gromacs.tar.gz https://ftp.gromacs.org/gromacs/gromacs-${GROMACS_VERSION}.tar.gz
@@ -84,21 +84,21 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 
 
-RUN apt-get install -y python3 python3-pip
-RUN pip3 install torch --extra-index-url https://download.pytorch.org/whl/cpu
+#RUN apt-get install -y python3 python3-pip
+#RUN pip3 install torch --extra-index-url https://download.pytorch.org/whl/cpu
 
-RUN cd /build && \
-    curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
-    unzip torch.zip && \
-    rm torch.zip
+#RUN cd /build && \
+#    curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
+#    unzip torch.zip && \
+#    rm torch.zip
 
 
-FROM nvidia/cuda:12.3.1-runtime-ubuntu22.04 
+FROM nvidia/cuda:12.6.2-runtime-ubuntu24.04 
 
 RUN apt update
 RUN apt install -y mpich
-RUN apt install -y libcufft10 libmpich12 libblas3 libgomp1 
-RUN apt install -y rsync
+# XXX: RUN apt install -y libcufft-12-6 libmpich12 libblas3 libgomp1 
+RUN apt install -y rsync libblas3
 
 COPY --from=builder /build/libtorch /build/libtorch
 ENV LD_LIBRARY_PATH=/build/libtorch/lib:$LD_LIBRARY_PATH
