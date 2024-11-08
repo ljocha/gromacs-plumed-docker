@@ -19,7 +19,7 @@ RUN cat /etc/apt/sources.list
 RUN apt-get update 
 RUN apt-get install -y cmake g++ gcc 
 RUN apt-get install -y libblas-dev xxd 
-RUN apt-get install -y mpich libmpich-dev 
+RUN apt-get install -y openmpi-bin libopenmpi-dev 
 RUN apt-get install -y curl
 RUN apt-get install -y unzip
 # RUN apt-get install -y libfftw3-dev
@@ -96,7 +96,7 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 FROM nvidia/cuda:12.6.2-runtime-ubuntu24.04 
 
 RUN apt update
-RUN apt install -y mpich
+RUN apt install -y openmpi-bin
 # XXX: RUN apt install -y libcufft-12-6 libmpich12 libblas3 libgomp1 
 RUN apt install -y rsync libblas3
 
