@@ -1,11 +1,17 @@
 #FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
-FROM nvidia/cuda:12.6.2-devel-ubuntu24.04 as builder
+# FROM nvidia/cuda:12.6.2-devel-ubuntu24.04 as builder
+
+ARG RAY=rayproject/ray:2.12.0-cu121
+
+FROM ${RAY} as builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Prague
 
 ARG JOBS=8
+
+USER root
 
 #ARG FFTW_VERSION=3.3.9
 #ARG FFTW_MD5=50145bb68a8510b5d77605f11cadf8dc
@@ -57,7 +63,8 @@ ENV INCLUDE=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${L
 ENV LIBRARY_PATH=${LIBTORCH}/lib:$LIBRARY_PATH
 ENV LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 
-RUN cd plumed2 && ./configure --enable-libtorch --enable-modules=all && make -j ${JOBS} && make install 
+# XXX: python broken with ray
+RUN cd plumed2 && ./configure --disable-python --enable-libtorch --enable-modules=all && make -j ${JOBS} && make install 
 RUN ldconfig
 
 RUN apt update
@@ -73,15 +80,20 @@ RUN echo ${GROMACS_MD5} gromacs.tar.gz > gromacs.tar.gz.md5 && md5sum -c gromacs
 RUN tar -xzvf gromacs.tar.gz
 RUN cd gromacs-${GROMACS_VERSION} && plumed patch -e gromacs-${GROMACS_PATCH_VERSION} -p
 
+RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+RUN apt-get update
+RUN apt remove -y cmake && apt install -y cmake
+
 COPY build-gmx.sh /build
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2 -d
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2 -d
 
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX2_256 -r
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX2_256 -r -d
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX2_256 -r -d
 
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
-RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
+#RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 
 
 #RUN apt-get install -y python3 python3-pip
@@ -93,7 +105,10 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r -d
 #    rm torch.zip
 
 
-FROM nvidia/cuda:12.6.2-runtime-ubuntu24.04 
+#FROM nvidia/cuda:12.6.2-runtime-ubuntu24.04 
+FROM ${RAY} 
+
+USER root
 
 RUN apt update
 RUN apt install -y openmpi-bin

@@ -1,6 +1,6 @@
 
 BASE?=cerit.io/ljocha/gromacs
-VERSION=2024-3-plumed-2-10-afed-pytorch-model-cv-2
+VERSION=2024-3-plumed-2-10-afed-pytorch-model-cv-2_ray-2-12-0
 IMAGE=${BASE}:${VERSION}
 
 DIR?=${PWD}
