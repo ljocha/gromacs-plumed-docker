@@ -1,9 +1,9 @@
 #FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
 # FROM nvidia/cuda:12.6.2-devel-ubuntu24.04 as builder
 
-ARG RAY=rayproject/ray:2.12.0-cu121
+ARG RAY=rayproject/ray:2.42.1-py39-cu124
 
-FROM ${RAY} as builder
+FROM ${RAY} AS builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -80,10 +80,10 @@ RUN echo ${GROMACS_MD5} gromacs.tar.gz > gromacs.tar.gz.md5 && md5sum -c gromacs
 RUN tar -xzvf gromacs.tar.gz
 RUN cd gromacs-${GROMACS_VERSION} && plumed patch -e gromacs-${GROMACS_PATCH_VERSION} -p
 
-RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
-RUN apt-get update
-RUN apt remove -y cmake && apt install -y cmake
+#RUN wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+#RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
+#RUN apt-get update
+#RUN apt remove -y cmake && apt install -y cmake
 
 COPY build-gmx.sh /build
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2
@@ -104,13 +104,15 @@ RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a AVX_512 -r
 #    unzip torch.zip && \
 #    rm torch.zip
 
+RUN apt update
+
 
 #FROM nvidia/cuda:12.6.2-runtime-ubuntu24.04 
-FROM ${RAY} 
+FROM ${RAY} AS runtime
 
 USER root
 
-RUN apt update
+RUN apt-get update
 RUN apt install -y openmpi-bin
 # XXX: RUN apt install -y libcufft-12-6 libmpich12 libblas3 libgomp1 
 RUN apt install -y rsync libblas3

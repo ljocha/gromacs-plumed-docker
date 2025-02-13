@@ -1,6 +1,6 @@
 
 BASE?=cerit.io/ljocha/gromacs
-VERSION=2024-3-plumed-2-10-afed-pytorch-model-cv-2_ray-2-12-0
+VERSION=2024-3-plumed-2-10-afed-pytorch-model-cv-2_ray-2-42-1
 IMAGE=${BASE}:${VERSION}
 
 DIR?=${PWD}
@@ -8,7 +8,8 @@ DIR?=${PWD}
 all: build #wrapper push
 
 build:
-	docker build -t ${IMAGE} .
+	docker build --target builder .
+	docker build --target runtime -t ${IMAGE} .
 
 wrapper:
 	sed 's?%IMAGE%?${IMAGE}?' gmx-docker.in >gmx-docker
