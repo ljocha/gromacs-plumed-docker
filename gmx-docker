@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IMAGE=kurecka/gromacs:2022-libtorch-1.12.1
+IMAGE=cerit.io/ljocha/gromacs:2025-0-plumed-2-10-afed-pytorch-model-cv-2_ray-2-54-0
 
 GMX_DOUBLE="OFF"
 WORKDIR_CURRENT=""

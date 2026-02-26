@@ -1,7 +1,8 @@
 #FROM nvidia/cuda:11.0.3-devel-ubuntu20.04 as builder
 # FROM nvidia/cuda:12.6.2-devel-ubuntu24.04 as builder
 
-ARG RAY=rayproject/ray:2.42.1-py39-cu124
+#ARG RAY=rayproject/ray:2.42.1-py39-cu124
+ARG RAY=rayproject/ray:2.54.0-py313-cu129
 
 FROM ${RAY} AS builder
 MAINTAINER Ales Krenek <ljocha@ics.muni.cz> 
@@ -52,12 +53,16 @@ RUN git clone https://github.com/ljocha/plumed2.git plumed2
 RUN cd plumed2 && git config user.name builder && git config user.email iam@some.where && git checkout v2.10 && git merge origin/afed && git merge origin/pytorch_model_cv
 
 # comment out, moved down, wrong with debug-
-RUN cd /build && \
-    curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
-    unzip torch.zip && \
-    rm torch.zip
+#RUN cd /build && \
+#    curl https://download.pytorch.org/libtorch/cpu/libtorch-cxx11-abi-shared-with-deps-1.12.1%2Bcpu.zip --output torch.zip && \
+#    unzip torch.zip && \
+#    rm torch.zip
 
-ENV LIBTORCH=/build/libtorch
+ARG TORCH_VERSION=2.10.0
+RUN mamba install -y libtorch=${TORCH_VERSION}
+
+#ENV LIBTORCH=/build/libtorch
+ENV LIBTORCH=/home/ray/anaconda3
 ENV CPATH=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${LIBTORCH}/include/torch:$CPATH
 ENV INCLUDE=${LIBTORCH}/include/torch/csrc/api/include/:${LIBTORCH}/include/:${LIBTORCH}/include/torch:$INCLUDE
 ENV LIBRARY_PATH=${LIBTORCH}/lib:$LIBRARY_PATH
@@ -70,12 +75,12 @@ RUN ldconfig
 RUN apt update
 RUN apt install -y python3
 
-ARG GROMACS_VERSION=2024.3
-ARG GROMACS_MD5=2eb4cd478cc5178fc9f67d66fcf48ed6
+ARG GROMACS_VERSION=2025.0
+#ARG GROMACS_MD5=2eb4cd478cc5178fc9f67d66fcf48ed6
 ARG GROMACS_PATCH_VERSION=${GROMACS_VERSION}
 
 RUN curl -o gromacs.tar.gz https://ftp.gromacs.org/gromacs/gromacs-${GROMACS_VERSION}.tar.gz
-RUN echo ${GROMACS_MD5} gromacs.tar.gz > gromacs.tar.gz.md5 && md5sum -c gromacs.tar.gz.md5
+#RUN echo ${GROMACS_MD5} gromacs.tar.gz > gromacs.tar.gz.md5 && md5sum -c gromacs.tar.gz.md5
 
 RUN tar -xzvf gromacs.tar.gz
 RUN cd gromacs-${GROMACS_VERSION} && plumed patch -e gromacs-${GROMACS_PATCH_VERSION} -p
@@ -84,6 +89,8 @@ RUN cd gromacs-${GROMACS_VERSION} && plumed patch -e gromacs-${GROMACS_PATCH_VER
 #RUN echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ focal main' | tee /etc/apt/sources.list.d/kitware.list >/dev/null
 #RUN apt-get update
 #RUN apt remove -y cmake && apt install -y cmake
+
+RUN mamba install -y cmake
 
 COPY build-gmx.sh /build
 RUN ./build-gmx.sh -s gromacs-${GROMACS_VERSION} -j ${JOBS} -a SSE2
@@ -117,11 +124,12 @@ RUN apt install -y openmpi-bin
 # XXX: RUN apt install -y libcufft-12-6 libmpich12 libblas3 libgomp1 
 RUN apt install -y rsync libblas3
 
-COPY --from=builder /build/libtorch /build/libtorch
-ENV LD_LIBRARY_PATH=/build/libtorch/lib:$LD_LIBRARY_PATH
-ENV CPLUS_INCLUDE_PATH=/build/libtorch/include:$CPLUS_INCLUDE_PATH
+#COPY --from=builder /build/libtorch /build/libtorch
+#ENV LD_LIBRARY_PATH=/build/libtorch/lib:$LD_LIBRARY_PATH
+#ENV CPLUS_INCLUDE_PATH=/build/libtorch/include:$CPLUS_INCLUDE_PATH
+RUN mamba install -y libtorch=${TORCH_VERSION}
 
-COPY --from=builder /build/libtorch/lib/* /usr/local/lib/
+# COPY --from=builder /build/libtorch/lib/* /usr/local/lib/
 COPY --from=builder /usr/local/bin /usr/local/bin
 COPY --from=builder /usr/local/lib/libplumed* /usr/local/lib/
 COPY --from=builder /usr/local/lib/plumed/ /usr/local/lib/plumed/
@@ -133,6 +141,7 @@ COPY gmx /usr/local/bin
 RUN ln -s gmx /usr/local/bin/gmx_d
 RUN ln -s gmx /usr/local/bin/mdrun
 RUN ln -s gmx /usr/local/bin/mdrun_d
+RUN echo /home/ray/anaconda3/lib >/etc/ld.so.conf.d/conda.conf
 
 RUN apt clean
 RUN ldconfig
