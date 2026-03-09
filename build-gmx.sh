@@ -37,6 +37,7 @@ CC=gcc CXX=g++ cmake $SRC \
 	-DCMAKE_INSTALL_PREFIX=/gromacs/$ARCHDIR \
 	-DGMX_USE_RDTSCP=$RDTSCP \
 	-DGMX_SIMD=$ARCH \
+	-DGMX_USE_PLUMED=ON \
 && make -j $JOBS \
 && make install
 
