@@ -127,4 +127,7 @@ RUN ln -s gmx /usr/local/bin/mdrun_d
 RUN echo /home/ray/anaconda3/lib >/etc/ld.so.conf.d/conda.conf
 
 RUN apt clean
-RUN ldconfig
+# The NVIDIA container runtime injects /etc/ld.so.conf.d/00-nvcr-*.conf on GPU nodes at startup,
+# which adds /usr/lib/x86_64-linux-gnu before conda and re-runs ldconfig — making the system's
+# older libstdc++ win over conda's. Renaming to 0-conda.conf sorts before 00-nvcr-*.
+RUN mv /etc/ld.so.conf.d/conda.conf /etc/ld.so.conf.d/0-conda.conf && ldconfig
